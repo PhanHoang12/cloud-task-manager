@@ -11,6 +11,7 @@
 import type * as automation from "../automation.js";
 import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
+import type * as deadlineLifecycle from "../deadlineLifecycle.js";
 import type * as invitations from "../invitations.js";
 import type * as members from "../members.js";
 import type * as notifications from "../notifications.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   automation: typeof automation;
   comments: typeof comments;
   crons: typeof crons;
+  deadlineLifecycle: typeof deadlineLifecycle;
   invitations: typeof invitations;
   members: typeof members;
   notifications: typeof notifications;

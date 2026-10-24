@@ -180,6 +180,8 @@ notifications: defineTable({
 
   projectId: v.id("projects"),
   taskId: v.id("projectTasks"),
+  isActive: v.optional(v.boolean()),
+  invalidatedAt: v.optional(v.number()),
 
   kind: v.union(
     v.literal("comment"),
@@ -195,7 +197,8 @@ notifications: defineTable({
   .index("by_recipient_created", [
     "recipientId",
     "createdAt",
-  ]),
+  ])
+  .index("by_task", ["taskId"]),
 
 deadlineAlerts: defineTable({
   alertKey: v.string(),
@@ -204,6 +207,10 @@ deadlineAlerts: defineTable({
   projectId: v.id("projects"),
 
   recipientId: v.string(),
+  
+  isActive: v.optional(v.boolean()),
+  invalidatedAt: v.optional(v.number()),
+
 
   kind: v.union(
     v.literal("deadline_upcoming"),

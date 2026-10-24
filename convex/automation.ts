@@ -125,6 +125,7 @@ async function createDeadlineAlert(
     kind,
     message,
     isRead: false,
+    isActive: true,
     createdAt: now,
   });
 
@@ -136,6 +137,7 @@ async function createDeadlineAlert(
     recipientId,
     kind,
     dueDate,
+    isActive: true,
     createdAt: now,
   });
 

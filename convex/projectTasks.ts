@@ -1,6 +1,7 @@
 import { mutation, query, type QueryCtx, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
+import { invalidateTaskDeadlineAlerts } from "./deadlineLifecycle";
 
 type Ctx = QueryCtx | MutationCtx;
 const taskStatus = v.union(v.literal("todo"), v.literal("in_progress"), v.literal("review"), v.literal("done"));
@@ -96,6 +97,9 @@ export const update = mutation({ args: {
   }
   validate(args);
   await validateAssignee(ctx, project.workspaceId, args.assigneeId);
+  if (task.dueDate !== args.dueDate || task.assigneeId !== args.assigneeId) {
+    await invalidateTaskDeadlineAlerts(ctx, args.taskId);
+  }
   await ctx.db.patch(args.taskId, { title: args.title.trim(), description: args.description.trim(),
     priority: args.priority, dueDate: args.dueDate, assigneeId: args.assigneeId, updatedAt: Date.now() });
   await log(ctx, { projectId: task.projectId, taskId: args.taskId, actorId: userId, type: "updated", detail: args.title.trim() });
@@ -108,6 +112,9 @@ export const setStatus = mutation({ args: { taskId: v.id("projectTasks"), status
   checkWrite(project.status, membership.role);
   checkTransition(membership.role, userId, task, args.status);
   if (task.status === args.status) return;
+  if (args.status === "done") {
+    await invalidateTaskDeadlineAlerts(ctx, args.taskId);
+  }
   await ctx.db.patch(args.taskId, { status: args.status, updatedAt: Date.now() });
   await log(ctx, { projectId: task.projectId, taskId: args.taskId, actorId: userId, type: "moved", detail: `${task.status} → ${args.status}` });
 }});
@@ -131,6 +138,9 @@ export const move = mutation({ args: {
     if (index < 0) throw new Error("Vị trí thả không hợp lệ.");
     lane.splice(index, 0, task);
   } else lane.push(task);
+  if (task.status !== args.targetStatus && args.targetStatus === "done") {
+    await invalidateTaskDeadlineAlerts(ctx, args.taskId);
+  }
   const now = Date.now();
   for (let index = 0; index < lane.length; index++) {
     const item = lane[index];
@@ -149,5 +159,6 @@ export const remove = mutation({ args: { taskId: v.id("projectTasks") }, handler
   const { membership } = await access(ctx, task.projectId, userId);
   if (membership.role !== "owner" && membership.role !== "admin") throw new Error("Chỉ Owner/Admin có thể xóa Task.");
   await log(ctx, { projectId: task.projectId, taskId: args.taskId, actorId: userId, type: "deleted", detail: task.title });
+  await invalidateTaskDeadlineAlerts(ctx, args.taskId);
   await ctx.db.delete(args.taskId);
 }});
