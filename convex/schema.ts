@@ -160,4 +160,27 @@ subtasks: defineTable({
   updatedAt: v.number(),
 })
   .index("by_task", ["taskId"]),
+
+  // Add INSIDE defineSchema({ ... }) in convex/schema.ts.
+// Keep all existing tables. Make sure defineTable and v are already imported.
+
+taskComments: defineTable({
+  taskId: v.id("projectTasks"),
+  projectId: v.id("projects"),
+  authorId: v.string(),
+  content: v.string(),
+  createdAt: v.number(),
+}).index("by_task_created", ["taskId", "createdAt"]),
+
+notifications: defineTable({
+  recipientId: v.string(),
+  actorId: v.string(),
+  projectId: v.id("projects"),
+  taskId: v.id("projectTasks"),
+  kind: v.union(v.literal("comment"), v.literal("assigned")),
+  message: v.string(),
+  isRead: v.boolean(),
+  createdAt: v.number(),
+}).index("by_recipient_created", ["recipientId", "createdAt"]),
+
 });

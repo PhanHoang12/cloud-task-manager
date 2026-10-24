@@ -5,6 +5,8 @@ import { api } from "../../../convex/_generated/api";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import "./kanban.css";
 import SubtaskPanel from "./SubtaskPanel";
+import TaskComments from "./TaskComments";
+import NotificationCenter from "./NotificationCenter";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -112,12 +114,44 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
     catch (e) { setError(e instanceof Error ? e.message : "Không thể xóa Task."); }
   }
 
-  return <div className="kb-page">
-    <button type="button" className="kb-back" onClick={onBack}>← Trở về Workspace</button>
+  
+return (
+  <div className="kb-page">
+    <button
+      type="button"
+      className="kb-back"
+      onClick={onBack}
+    >
+      ← Trở về Workspace
+    </button>
+
     <header className="kb-header">
-      <div><p className="kb-caption">CLOUDTASK PRO / PROJECT KANBAN</p>
-        <h2>{project.name}</h2><p>{project.description || "Quản lý công việc dự án theo thời gian thực."}</p></div>
-      {canCreate && <button className="kb-primary" onClick={openCreate}>+ Công việc mới</button>}
+      <div className="kb-header-info">
+        <p className="kb-caption">
+          CLOUDTASK PRO / PROJECT KANBAN
+        </p>
+
+        <h2>{project.name}</h2>
+
+        <p>
+          {project.description ||
+            "Quản lý công việc dự án theo thời gian thực."}
+        </p>
+      </div>
+
+      <div className="kb-header-actions">
+        <NotificationCenter />
+
+        {canCreate && (
+          <button
+            type="button"
+            className="kb-primary"
+            onClick={openCreate}
+          >
+            + Công việc mới
+          </button>
+        )}
+      </div>
     </header>
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
@@ -166,6 +200,10 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
             <SubtaskPanel
               taskId={task._id}
               editable={canChange(task, task.status)}/>
+              <TaskComments
+            taskId={task._id}
+            canComment={active && role !== "viewer"}
+            canModerate={isManager}/>
             </article>)}
 
         {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">Chưa có công việc</p>}
@@ -193,5 +231,6 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
           <button type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
       </form>
     </div>}
-  </div>;
+  </div>
+);
 }
