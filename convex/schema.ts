@@ -173,15 +173,48 @@ taskComments: defineTable({
   createdAt: v.number(),
 }).index("by_task_created", ["taskId", "createdAt"]),
 
+
 notifications: defineTable({
   recipientId: v.string(),
   actorId: v.string(),
+
   projectId: v.id("projects"),
   taskId: v.id("projectTasks"),
-  kind: v.union(v.literal("comment"), v.literal("assigned")),
+
+  kind: v.union(
+    v.literal("comment"),
+    v.literal("assigned"),
+    v.literal("deadline_upcoming"),
+    v.literal("deadline_overdue")
+  ),
+
   message: v.string(),
   isRead: v.boolean(),
   createdAt: v.number(),
-}).index("by_recipient_created", ["recipientId", "createdAt"]),
+})
+  .index("by_recipient_created", [
+    "recipientId",
+    "createdAt",
+  ]),
+
+deadlineAlerts: defineTable({
+  alertKey: v.string(),
+
+  taskId: v.id("projectTasks"),
+  projectId: v.id("projects"),
+
+  recipientId: v.string(),
+
+  kind: v.union(
+    v.literal("deadline_upcoming"),
+    v.literal("deadline_overdue")
+  ),
+
+  dueDate: v.string(),
+  createdAt: v.number(),
+})
+  .index("by_alert_key", ["alertKey"])
+  .index("by_task", ["taskId"]),
+
 
 });

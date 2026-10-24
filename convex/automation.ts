@@ -1,16 +1,18 @@
 
 import { internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { MutationCtx } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
 
 const TIME_ZONE = "Asia/Ho_Chi_Minh";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 100;
 
-/**
- * Lấy ngày hiện tại theo giờ Việt Nam.
- * Kết quả: YYYY-MM-DD
- */
+type DeadlineKind =
+  | "deadline_upcoming"
+  | "deadline_overdue";
+
 function vietnamDate(timestamp: number): string {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: TIME_ZONE,
@@ -20,47 +22,129 @@ function vietnamDate(timestamp: number): string {
   }).format(new Date(timestamp));
 }
 
-/**
- * Deadline được tính đến hết ngày tại Việt Nam.
- * Ví dụ 2026-10-24 hết hạn lúc
- * 2026-10-25 00:00:00 GMT+7.
- */
+// Hạn YYYY-MM-DD kết thúc lúc 00:00 ngày tiếp theo,
+// theo giờ Việt Nam.
 function deadlineEnd(date: string): number {
-  return (
-    Date.parse(`${date}T00:00:00+07:00`) +
-    DAY_MS
-  );
+  return Date.parse(`${date}T00:00:00+07:00`) + DAY_MS;
 }
 
-/**
- * Phân loại deadline.
- */
 function classifyDeadline(
   dueDate: string,
   now: number
-): "overdue" | "upcoming" | "normal" {
+): DeadlineKind | null {
   const remaining = deadlineEnd(dueDate) - now;
 
   if (!Number.isFinite(remaining)) {
-    return "normal";
+    return null;
   }
 
   if (remaining <= 0) {
-    return "overdue";
+    return "deadline_overdue";
   }
 
   if (remaining <= DAY_MS) {
-    return "upcoming";
+    return "deadline_upcoming";
   }
 
-  return "normal";
+  return null;
 }
 
 /**
- * ENTRY POINT
- * Được Convex Cron Job gọi 15 phút/lần.
+ * Tạo thông báo deadline nếu chưa từng gửi
+ * cho cùng Task + người nhận + loại + ngày hạn.
  *
- * Chỉ lập lịch quét dữ liệu.
+ * Toàn bộ thao tác chạy trong Convex mutation.
+ */
+async function createDeadlineAlert(
+  ctx: MutationCtx,
+  task: Doc<"projectTasks">,
+  kind: DeadlineKind,
+  now: number
+): Promise<boolean> {
+  const recipientId = task.assigneeId;
+  const dueDate = task.dueDate;
+
+  if (!recipientId || !dueDate) {
+    return false;
+  }
+
+  if (task.status === "done") {
+    return false;
+  }
+
+  const project = await ctx.db.get(task.projectId);
+
+  if (!project || project.status !== "active") {
+    return false;
+  }
+
+  // Không gửi nếu người nhận đã rời Workspace
+  // hoặc bị chuyển sang Viewer.
+  const membership = await ctx.db
+    .query("workspaceMembers")
+    .withIndex("by_workspace_user", (q) =>
+      q
+        .eq("workspaceId", project.workspaceId)
+        .eq("userId", recipientId)
+    )
+    .unique();
+
+  if (!membership || membership.role === "viewer") {
+    return false;
+  }
+
+  const alertKey = [
+    task._id,
+    recipientId,
+    kind,
+    dueDate,
+  ].join("|");
+
+  const existing = await ctx.db
+    .query("deadlineAlerts")
+    .withIndex("by_alert_key", (q) =>
+      q.eq("alertKey", alertKey)
+    )
+    .first();
+
+  if (existing) {
+    return false;
+  }
+
+  const message =
+    kind === "deadline_upcoming"
+      ? `Công việc "${task.title}" sắp hết hạn (${dueDate}).`
+      : `Công việc "${task.title}" đã quá hạn (${dueDate}).`;
+
+  // Tạo thông báo dùng chung NotificationCenter.
+  await ctx.db.insert("notifications", {
+    recipientId,
+    actorId: "system",
+    projectId: task.projectId,
+    taskId: task._id,
+    kind,
+    message,
+    isRead: false,
+    createdAt: now,
+  });
+
+  // Ghi nhận mốc đã thông báo.
+  await ctx.db.insert("deadlineAlerts", {
+    alertKey,
+    taskId: task._id,
+    projectId: task.projectId,
+    recipientId,
+    kind,
+    dueDate,
+    createdAt: now,
+  });
+
+  return true;
+}
+
+/**
+ * Cron entry point:
+ * Chạy mỗi 15 phút.
  */
 export const scanDeadlines = internalMutation({
   args: {},
@@ -68,8 +152,6 @@ export const scanDeadlines = internalMutation({
   handler: async (ctx): Promise<void> => {
     const now = Date.now();
 
-    // Giới hạn thời điểm kiểm tra cố định
-    // cho toàn bộ các trang trong một lần quét.
     await ctx.scheduler.runAfter(
       0,
       internal.automation.scanDeadlinePage,
@@ -80,16 +162,15 @@ export const scanDeadlines = internalMutation({
       }
     );
 
-    console.log(
-      "[Automation] Deadline scan scheduled",
-      new Date(now).toISOString()
-    );
+    console.log("[Automation] Scan scheduled", {
+      executedAt: new Date(now).toISOString(),
+    });
   },
 });
 
 /**
- * WORKER
- * Xử lý từng trang dữ liệu theo deadline.
+ * Worker:
+ * Quét tối đa 100 Task mỗi lần thực thi.
  */
 export const scanDeadlinePage = internalMutation({
   args: {
@@ -101,9 +182,9 @@ export const scanDeadlinePage = internalMutation({
   handler: async (ctx, args): Promise<void> => {
     const { cursor, now, pageNumber } = args;
 
-    // Bao gồm Task có dueDate đến hết ngày mai.
-    // Những Task còn hơn 24 giờ sẽ bị loại
-    // bởi classifyDeadline().
+    // Chọn rộng hơn 24 giờ để tránh bỏ sót
+    // khi lọc theo ngày; classifyDeadline()
+    // sẽ quyết định chính xác.
     const upperDate = vietnamDate(now + 2 * DAY_MS);
 
     const result = await ctx.db
@@ -120,54 +201,50 @@ export const scanDeadlinePage = internalMutation({
 
     let upcoming = 0;
     let overdue = 0;
+    let created = 0;
     let skipped = 0;
 
     for (const task of result.page) {
-      // 1. Task đã hoàn thành.
-      if (task.status === "done") {
+      if (
+        task.status === "done" ||
+        !task.dueDate ||
+        !task.assigneeId
+      ) {
         skipped++;
         continue;
       }
 
-      // 2. Task chưa có deadline hoặc người nhận.
-      if (!task.dueDate || !task.assigneeId) {
+      const kind = classifyDeadline(
+        task.dueDate,
+        now
+      );
+
+      if (!kind) {
         skipped++;
         continue;
       }
 
-      // 3. Kiểm tra Project.
-      const project = await ctx.db.get(task.projectId);
-
-      if (!project || project.status !== "active") {
-        skipped++;
-        continue;
-      }
-
-      // 4. Phân loại deadline.
-      const state = classifyDeadline(task.dueDate, now);
-
-      if (state === "normal") {
-        skipped++;
-        continue;
-      }
-
-      if (state === "upcoming") {
+      if (kind === "deadline_upcoming") {
         upcoming++;
-
-        console.log("[Deadline UPCOMING]", {
-          taskId: task._id,
-          dueDate: task.dueDate,
-          assigneeId: task.assigneeId,
-        });
+      } else {
+        overdue++;
       }
 
-      if (state === "overdue") {
-        overdue++;
+      const inserted = await createDeadlineAlert(
+        ctx,
+        task,
+        kind,
+        now
+      );
 
-        console.log("[Deadline OVERDUE]", {
+      if (inserted) {
+        created++;
+
+        console.log("[Deadline Alert CREATED]", {
           taskId: task._id,
+          recipientId: task.assigneeId,
+          kind,
           dueDate: task.dueDate,
-          assigneeId: task.assigneeId,
         });
       }
     }
@@ -177,11 +254,11 @@ export const scanDeadlinePage = internalMutation({
       scanned: result.page.length,
       upcoming,
       overdue,
+      notificationsCreated: created,
       skipped,
       completed: result.isDone,
     });
 
-    // 5. Tiếp tục quét nếu còn dữ liệu.
     if (!result.isDone) {
       await ctx.scheduler.runAfter(
         0,
@@ -193,13 +270,10 @@ export const scanDeadlinePage = internalMutation({
         }
       );
     } else {
-      console.log(
-        "[Automation] Deadline scan finished",
-        {
-          completedAt: new Date().toISOString(),
-          pagesProcessed: pageNumber,
-        }
-      );
+      console.log("[Automation] Deadline scan finished", {
+        pagesProcessed: pageNumber,
+        completedAt: new Date().toISOString(),
+      });
     }
   },
 });

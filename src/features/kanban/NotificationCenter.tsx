@@ -3,11 +3,37 @@ import { createPortal } from "react-dom";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Bell, CheckCheck, MessageCircle, X } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  MessageCircle,
+  Clock3,
+  AlertTriangle,
+  UserPlus,
+  X,
+} from "lucide-react";
 import "./collaboration.css";
 
 const PANEL_WIDTH = 380;
 const VIEWPORT_GAP = 12;
+
+
+function getNotificationIcon(kind: string) {
+  switch (kind) {
+    case "deadline_upcoming":
+      return <Clock3 size={20} />;
+
+    case "deadline_overdue":
+      return <AlertTriangle size={20} />;
+
+    case "assigned":
+      return <UserPlus size={20} />;
+
+    case "comment":
+    default:
+      return <MessageCircle size={20} />;
+  }
+}
 
 function formatTime(timestamp: number): string {
   const difference = Math.max(0, Date.now() - timestamp);
@@ -169,7 +195,7 @@ export default function NotificationCenter() {
                   aria-label={`${item.message}${item.isRead ? "" : ", chưa đọc"}`}
                   onClick={() => void handleRead(item._id, item.isRead)}
                 >
-                  <span className="notify-icon"><MessageCircle size={20} /></span>
+                  <span className={`notify-icon notify-icon-${item.kind}`}>{getNotificationIcon(item.kind)}</span>
                   <span className="notify-content">
                     <span className="notify-message">{item.message}</span>
                     <span className="notify-time">{formatTime(item.createdAt)}</span>
