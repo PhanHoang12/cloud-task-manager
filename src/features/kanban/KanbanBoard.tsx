@@ -4,6 +4,7 @@ import { useUser } from "@clerk/react";
 import { api } from "../../../convex/_generated/api";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import "./kanban.css";
+import SubtaskPanel from "./SubtaskPanel";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -141,10 +142,32 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
             {canChange(task, task.status) && <button type="button" className="kb-edit" onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
             <div className="kb-details">{task.dueDate && <span>Hạn: {task.dueDate}</span>}
               <span>{task.assigneeId ? `Phụ trách: ${task.assigneeId === user?.id ? "Tôi" : task.assigneeId.slice(-8)}` : "Chưa phân công"}</span></div>
-            <label>Trạng thái<select value={task.status} disabled={!canChange(task,task.status)} onChange={e => void move(task, e.target.value as Status)}>
-              {lanes.map(s => <option key={s.key} value={s.key} disabled={!canChange(task,s.key)}>{s.title}</option>)}
-            </select></label>
-          </article>)}
+              <label>
+                Trạng thái
+                <select
+                  value={task.status}
+                  disabled={!canChange(task, task.status)}
+                  onChange={(e) =>
+                    void move(task, e.target.value as Status)
+                  }
+                >
+                  {lanes.map((s) => (
+                    <option
+                      key={s.key}
+                      value={s.key}
+                      disabled={!canChange(task, s.key)}
+                    >
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            {/* Module 04.4 — Subtasks & Progress Tracking */}
+            <SubtaskPanel
+              taskId={task._id}
+              editable={canChange(task, task.status)}/>
+            </article>)}
+
         {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">Chưa có công việc</p>}
       </section>)}
     </div>

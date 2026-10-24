@@ -150,5 +150,14 @@ projectTaskActivities: defineTable({
   "projectId",
   "createdAt"
 ]),
-
+subtasks: defineTable({
+  taskId: v.id("projectTasks"),
+  title: v.string(),
+  isCompleted: v.boolean(),
+  position: v.number(),
+  createdBy: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_task", ["taskId"]),
 });
