@@ -97,5 +97,37 @@ export default defineSchema({
     detail: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId", "createdAt"]),
+  projectTasks: defineTable({
+  projectId: v.id("projects"),
 
+  title: v.string(),
+  description: v.string(),
+
+  createdBy: v.string(),
+  assigneeId: v.optional(v.string()),
+
+  status: v.union(
+    v.literal("todo"),
+    v.literal("in_progress"),
+    v.literal("review"),
+    v.literal("done")
+  ),
+
+  priority: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("high"),
+    v.literal("urgent")
+  ),
+
+  dueDate: v.optional(v.string()),
+
+  position: v.number(),
+
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_project", ["projectId"])
+  .index("by_project_status", ["projectId", "status"])
+  .index("by_assignee", ["assigneeId"]),
 });

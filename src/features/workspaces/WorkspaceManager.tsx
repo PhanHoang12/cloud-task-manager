@@ -8,6 +8,7 @@ import {
 } 
 from "lucide-react"; import "./workspace.css";
 import TeamMembersPanel, {MyInvitations,} from "./TeamMembersPanel";
+import KanbanBoard from "../kanban/KanbanBoard";
 
 type Modal = "workspace" | "project" | null;
 type ProjectStatus = "active" | "completed" | "archived";
@@ -24,6 +25,11 @@ export default function WorkspaceManager() {
   const activeWorkspace = workspaces?.find((item) => item._id === selectedId) ?? workspaces?.[0];
   const workspaceId = activeWorkspace?._id;
   const projects = useQuery(api.projects.list, workspaceId ? { workspaceId } : "skip");
+
+  const [selectedProjectId, setSelectedProjectId] =
+  useState<Id<"projects"> | null>(null);
+  const selectedProject = projects?.find(
+  (project) => project._id === selectedProjectId);
   const [modal, setModal] = useState<Modal>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -71,6 +77,17 @@ export default function WorkspaceManager() {
       setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái.");
     }
   }
+
+  if (selectedProject && workspaceId && activeWorkspace) {
+  return (
+    <KanbanBoard
+      project={selectedProject}
+      workspaceId={workspaceId}
+      role={activeWorkspace.myRole}
+      onBack={() => setSelectedProjectId(null)}
+    />
+  );
+}
 
   return (
     <div className="ws-page">
@@ -136,7 +153,13 @@ export default function WorkspaceManager() {
                           </select>
                         </label>
                       ) : <span><Users size={15}/> {activeWorkspace?.myRole}</span>}
-                      <ArrowRight size={17}/>
+                      <button
+                        type="button"
+                        className="kb-open-project"
+                        aria-label={`Mở dự án ${project.name}`}
+                        onClick={() => setSelectedProjectId(project._id)}>
+                        <ArrowRight size={17} />
+                      </button>
                     </div>
                   </article>
                 ))}
