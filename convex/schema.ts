@@ -129,7 +129,8 @@ export default defineSchema({
 })
   .index("by_project", ["projectId"])
   .index("by_project_status", ["projectId", "status"])
-  .index("by_assignee", ["assigneeId"]),
+  .index("by_assignee", ["assigneeId"])
+  .index("by_due_date", ["dueDate"]),
 
   
 projectTaskActivities: defineTable({
