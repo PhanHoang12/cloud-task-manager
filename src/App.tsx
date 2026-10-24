@@ -4,7 +4,7 @@ import { Authenticated, Unauthenticated, AuthLoading, useMutation, useQuery } fr
 import { api } from "../convex/_generated/api";
 import type { Doc } from "../convex/_generated/dataModel";
 import { CheckCircle2, CircleDashed, Clock3, Plus, Search, Trash2, Pencil, X, LayoutDashboard, Cloud, ListTodo } from "lucide-react";
-
+import WorkspaceManager from "./features/workspaces/WorkspaceManager";
 type Task=Doc<"tasks">;
 type Status=Task["status"];
 type Priority=Task["priority"];
@@ -42,6 +42,48 @@ function TaskDashboard(){
    {open&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)setOpen(false)}}><form className="modal" onSubmit={save}><div className="modal-head"><div><h2>{editing?"Chỉnh sửa công việc":"Tạo công việc mới"}</h2><p>Lưu trực tiếp vào cơ sở dữ liệu Convex.</p></div><button type="button" className="icon-btn" onClick={()=>setOpen(false)}><X size={21}/></button></div><label>Tiêu đề *<input required maxLength={120} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Ví dụ: Hoàn thành báo cáo Cloud"/></label><label>Mô tả<textarea maxLength={2000} rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Ghi chú thêm..."/></label><div className="form-row"><label>Mức ưu tiên<select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value as Priority})}><option value="low">Thấp</option><option value="medium">Trung bình</option><option value="high">Cao</option></select></label><label>Hạn hoàn thành<input type="date" value={form.dueDate} onChange={e=>setForm({...form,dueDate:e.target.value})}/></label></div>{editing&&<label>Trạng thái<select value={form.status} onChange={e=>setForm({...form,status:e.target.value as Status})}><option value="todo">Cần làm</option><option value="doing">Đang thực hiện</option><option value="done">Hoàn thành</option></select></label>}{error&&<p className="error" role="alert">{error}</p>}<div className="modal-buttons"><button type="button" className="secondary" onClick={()=>setOpen(false)}>Hủy</button><button className="primary" disabled={busy||!form.title.trim()} type="submit">{busy?"Đang lưu...":editing?"Lưu thay đổi":"Tạo công việc"}</button></div></form></div>}
  </div>
 }
+
+function CloudTaskWorkspace() {
+  const [activePage, setActivePage] = useState<
+    "personal" | "workspace"
+  >("workspace");
+
+  return (
+    <div>
+      <nav
+        style={{
+          display: "flex",
+          gap: 12,
+          padding: "16px 24px",
+          background: "#ffffff",
+          borderBottom: "1px solid #e5e7eb",
+        }}
+      >
+        <button
+          type="button"
+          className={activePage === "personal" ? "primary" : "secondary"}
+          onClick={() => setActivePage("personal")}
+        >
+          Công việc cá nhân
+        </button>
+
+        <button
+          type="button"
+          className={activePage === "workspace" ? "primary" : "secondary"}
+          onClick={() => setActivePage("workspace")}
+        >
+          Workspace & Projects
+        </button>
+      </nav>
+
+      {activePage === "personal" ? (
+        <TaskDashboard />
+      ) : (
+        <WorkspaceManager />
+      )}
+    </div>
+  );
+} 
 function AuthConnectionNotice() {
  return <div className="landing"><section className="landing-card" aria-labelledby="auth-connection-title">
   <div className="landing-logo"><Cloud size={32}/></div>
@@ -55,4 +97,4 @@ function AuthConnectionNotice() {
  </section></div>;
 }
 
-export default function App(){const {isLoaded,isSignedIn}=useAuth();if(!isLoaded)return <div className="auth-loading">Đang tải phiên đăng nhập...</div>;return <><AuthLoading><div className="auth-loading">Đang xác thực phiên đăng nhập...</div></AuthLoading><Unauthenticated>{isSignedIn?<AuthConnectionNotice/>:<div className="landing"><div className="landing-card"><div className="landing-logo"><Cloud size={32}/></div><div className="eyebrow">CLOUD TASK MANAGEMENT</div><h1>Công việc rõ ràng.<br/><span>Tiến độ vượt trội.</span></h1><p>Quản lý công việc cá nhân an toàn, đồng bộ theo thời gian thực với Convex Cloud.</p><div className="landing-actions"><SignUpButton mode="modal"><button className="primary">Tạo tài khoản <Plus size={17}/></button></SignUpButton><SignInButton mode="modal"><button className="secondary">Đăng nhập</button></SignInButton></div><small>React + Vite · Clerk Authentication · Convex Realtime · Vercel</small></div></div>}</Unauthenticated><Authenticated><TaskDashboard/></Authenticated></>}
+export default function App(){const {isLoaded,isSignedIn}=useAuth();if(!isLoaded)return <div className="auth-loading">Đang tải phiên đăng nhập...</div>;return <><AuthLoading><div className="auth-loading">Đang xác thực phiên đăng nhập...</div></AuthLoading><Unauthenticated>{isSignedIn?<AuthConnectionNotice/>:<div className="landing"><div className="landing-card"><div className="landing-logo"><Cloud size={32}/></div><div className="eyebrow">CLOUD TASK MANAGEMENT</div><h1>Công việc rõ ràng.<br/><span>Tiến độ vượt trội.</span></h1><p>Quản lý công việc cá nhân an toàn, đồng bộ theo thời gian thực với Convex Cloud.</p><div className="landing-actions"><SignUpButton mode="modal"><button className="primary">Tạo tài khoản <Plus size={17}/></button></SignUpButton><SignInButton mode="modal"><button className="secondary">Đăng nhập</button></SignInButton></div><small>React + Vite · Clerk Authentication · Convex Realtime · Vercel</small></div></div>}</Unauthenticated><Authenticated><CloudTaskWorkspace /></Authenticated></>}
