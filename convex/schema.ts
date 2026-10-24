@@ -130,4 +130,25 @@ export default defineSchema({
   .index("by_project", ["projectId"])
   .index("by_project_status", ["projectId", "status"])
   .index("by_assignee", ["assigneeId"]),
+
+  
+projectTaskActivities: defineTable({
+  projectId: v.id("projects"),
+  taskId: v.id("projectTasks"),
+  actorId: v.string(),
+
+  type: v.union(
+    v.literal("created"),
+    v.literal("updated"),
+    v.literal("moved"),
+    v.literal("deleted")
+  ),
+
+  detail: v.string(),
+  createdAt: v.number(),
+}).index("by_project_created", [
+  "projectId",
+  "createdAt"
+]),
+
 });

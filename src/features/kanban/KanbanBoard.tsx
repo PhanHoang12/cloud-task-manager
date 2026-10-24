@@ -31,6 +31,12 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
   const create = useMutation(api.projectTasks.create);
   const setStatus = useMutation(api.projectTasks.setStatus);
   const remove = useMutation(api.projectTasks.remove);
+  const update = useMutation(api.projectTasks.update);
+  const moveTask = useMutation(api.projectTasks.move);
+  const activities = useQuery(api.projectTasks.activities, { projectId: project._id });
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [dragId, setDragId] = useState<Id<"projectTasks"> | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -59,13 +65,37 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
     if (busy || !canCreate) return;
     setBusy(true); setError("");
     try {
-      await create({ projectId: project._id, title: title.trim(),
-        description: description.trim(), priority,
-        dueDate: dueDate || undefined, assigneeId: assigneeId || undefined });
+      if (editingTask) {
+        await update({taskId: editingTask._id, title: title.trim(), description: description.trim(), priority,
+          dueDate: dueDate || undefined, assigneeId: assigneeId || undefined });
+      } else {
+        await create({ projectId: project._id, title: title.trim(), description: description.trim(), priority,
+          dueDate: dueDate || undefined, assigneeId: assigneeId || undefined });
+      }
       setTitle(""); setDescription(""); setDueDate("");
-      setAssigneeId(""); setPriority("medium"); setShowModal(false);
+      setAssigneeId(""); setPriority("medium"); setEditingTask(null); setShowModal(false);
     } catch (e) { setError(e instanceof Error ? e.message : "Không thể tạo Task."); }
     finally { setBusy(false); }
+  }
+
+  function openCreate() {
+    setEditingTask(null); setTitle(""); setDescription(""); setDueDate("");
+    setPriority("medium"); setAssigneeId(""); setError(""); setShowModal(true);
+  }
+  function openEdit(task: Task) {
+    if (!canChange(task, task.status)) return;
+    setEditingTask(task); setTitle(task.title); setDescription(task.description);
+    setDueDate(task.dueDate ?? ""); setPriority(task.priority);
+    setAssigneeId(task.assigneeId ?? ""); setError(""); setShowModal(true);
+  }
+  async function dropTask(targetStatus: Status, beforeTaskId?: Id<"projectTasks">) {
+    if (!dragId) return;
+    const task = tasks?.find(t => t._id === dragId);
+    setDragId(null);
+    if (!task || !canChange(task, targetStatus) || !active) return;
+    setError("");
+    try { await moveTask({taskId: task._id, targetStatus, beforeTaskId}); }
+    catch (e) { setError(e instanceof Error ? e.message : "Không thể kéo thả Task."); }
   }
 
   async function move(task: Task, status: Status) {
@@ -86,19 +116,29 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
     <header className="kb-header">
       <div><p className="kb-caption">CLOUDTASK PRO / PROJECT KANBAN</p>
         <h2>{project.name}</h2><p>{project.description || "Quản lý công việc dự án theo thời gian thực."}</p></div>
-      {canCreate && <button className="kb-primary" onClick={() => { setError(""); setShowModal(true); }}>+ Công việc mới</button>}
+      {canCreate && <button className="kb-primary" onClick={openCreate}>+ Công việc mới</button>}
     </header>
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
     <input className="kb-search" aria-label="Tìm Task" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
+    <div className="kb-toolbar"><span>Kéo thả để đổi trạng thái hoặc sắp xếp • Có thể dùng dropdown thay thế</span>
+      <button type="button" onClick={() => setShowHistory(v => !v)}>{showHistory ? "Ẩn lịch sử" : "Xem lịch sử"}</button></div>
     <div className="kb-columns">
-      {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}>
+      {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}
+        onDragOver={e => {if (dragId) e.preventDefault();}}
+        onDrop={e => { e.preventDefault(); void dropTask(lane.key); }}>
         <div className="kb-column-title"><strong>{lane.title}</strong><span>{visible.filter(t => t.status === lane.key).length}</span></div>
         {tasks === undefined ? <p className="kb-muted">Đang tải...</p> :
-          visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id}>
+          visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id}
+            draggable={canChange(task, task.status)}
+            onDragStart={e => {e.dataTransfer.effectAllowed = "move"; setDragId(task._id);}}
+            onDragEnd={() => setDragId(null)}
+            onDragOver={e => {if (dragId && dragId !== task._id) e.preventDefault();}}
+            onDrop={e => {e.stopPropagation(); e.preventDefault(); void dropTask(lane.key, task._id);}}>
             <div className="kb-card-top"><span className={`kb-priority kb-${task.priority}`}>{priorityLabel[task.priority]}</span>
               {isManager && <button type="button" onClick={() => void deleteTask(task)} aria-label={`Xóa ${task.title}`}>×</button>}</div>
-            <h3>{task.title}</h3>{task.description && <p>{task.description}</p>}
+            <h3>{task.title}</h3>
+            {canChange(task, task.status) && <button type="button" className="kb-edit" onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
             <div className="kb-details">{task.dueDate && <span>Hạn: {task.dueDate}</span>}
               <span>{task.assigneeId ? `Phụ trách: ${task.assigneeId === user?.id ? "Tôi" : task.assigneeId.slice(-8)}` : "Chưa phân công"}</span></div>
             <label>Trạng thái<select value={task.status} disabled={!canChange(task,task.status)} onChange={e => void move(task, e.target.value as Status)}>
@@ -108,21 +148,26 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
         {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">Chưa có công việc</p>}
       </section>)}
     </div>
+    {showHistory && <section className="kb-history"><h3>Lịch sử công việc</h3>
+      {activities === undefined ? <p>Đang tải...</p> : activities.length === 0 ? <p>Chưa có thay đổi nào.</p> :
+        <ul>{activities.map(a => <li key={a._id}><strong>{a.type}</strong> — {a.detail}
+          <small> • {new Date(a.createdAt).toLocaleString("vi-VN")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
+    </section>}
     {showModal && <div className="kb-overlay" onMouseDown={e => { if(e.target === e.currentTarget && !busy) setShowModal(false); }}>
       <form className="kb-dialog" onSubmit={e => void submit(e)}>
-        <div className="kb-dialog-head"><h3>Tạo công việc mới</h3><button type="button" onClick={() => setShowModal(false)} disabled={busy}>×</button></div>
+        <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button type="button" onClick={() => setShowModal(false)} disabled={busy}>×</button></div>
         <label>Tiêu đề *<input required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
         <label>Mô tả<textarea rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
         <div className="kb-form-row"><label>Ưu tiên<select value={priority} onChange={e => setPriority(e.target.value as Priority)}>
           {Object.entries(priorityLabel).map(([k,v]) => <option key={k} value={k}>{v}</option>)}</select></label>
           <label>Hạn hoàn thành<input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></label></div>
-        <label>Người phụ trách<select value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+        <label>Người phụ trách<select disabled={!!editingTask && !isManager} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
           <option value="">Chưa phân công</option>
           {members?.filter(m => m.role !== "viewer").map(m => <option key={m._id} value={m.userId}>{m.userId === user?.id ? "Tôi" : m.userId}</option>)}
         </select></label>
         {error && <p role="alert" className="kb-error">{error}</p>}
         <div className="kb-actions"><button type="button" disabled={busy} onClick={() => setShowModal(false)}>Hủy</button>
-          <button type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : "Tạo công việc"}</button></div>
+          <button type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
       </form>
     </div>}
   </div>;
