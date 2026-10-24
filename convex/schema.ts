@@ -97,5 +97,67 @@ export default defineSchema({
     detail: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId", "createdAt"]),
+  projectTasks: defineTable({
+  projectId: v.id("projects"),
 
+  title: v.string(),
+  description: v.string(),
+
+  createdBy: v.string(),
+  assigneeId: v.optional(v.string()),
+
+  status: v.union(
+    v.literal("todo"),
+    v.literal("in_progress"),
+    v.literal("review"),
+    v.literal("done")
+  ),
+
+  priority: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("high"),
+    v.literal("urgent")
+  ),
+
+  dueDate: v.optional(v.string()),
+
+  position: v.number(),
+
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_project", ["projectId"])
+  .index("by_project_status", ["projectId", "status"])
+  .index("by_assignee", ["assigneeId"]),
+
+  
+projectTaskActivities: defineTable({
+  projectId: v.id("projects"),
+  taskId: v.id("projectTasks"),
+  actorId: v.string(),
+
+  type: v.union(
+    v.literal("created"),
+    v.literal("updated"),
+    v.literal("moved"),
+    v.literal("deleted")
+  ),
+
+  detail: v.string(),
+  createdAt: v.number(),
+}).index("by_project_created", [
+  "projectId",
+  "createdAt"
+]),
+subtasks: defineTable({
+  taskId: v.id("projectTasks"),
+  title: v.string(),
+  isCompleted: v.boolean(),
+  position: v.number(),
+  createdBy: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_task", ["taskId"]),
 });

@@ -11,7 +11,9 @@
 import type * as invitations from "../invitations.js";
 import type * as members from "../members.js";
 import type * as permissions from "../permissions.js";
+import type * as projectTasks from "../projectTasks.js";
 import type * as projects from "../projects.js";
+import type * as subtasks from "../subtasks.js";
 import type * as tasks from "../tasks.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -25,7 +27,9 @@ declare const fullApi: ApiFromModules<{
   invitations: typeof invitations;
   members: typeof members;
   permissions: typeof permissions;
+  projectTasks: typeof projectTasks;
   projects: typeof projects;
+  subtasks: typeof subtasks;
   tasks: typeof tasks;
   workspaces: typeof workspaces;
 }>;
