@@ -5,8 +5,9 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import {
   ArrowRight, CheckCircle2, CircleDot, FolderKanban, Layers3,
   Plus, Search, ShieldCheck, Users, X
-} from "lucide-react";
-import "./workspace.css";
+} 
+from "lucide-react"; import "./workspace.css";
+import TeamMembersPanel, {MyInvitations,} from "./TeamMembersPanel";
 
 type Modal = "workspace" | "project" | null;
 type ProjectStatus = "active" | "completed" | "archived";
@@ -83,7 +84,7 @@ export default function WorkspaceManager() {
           <Plus size={18} /> Workspace mới
         </button>
       </div>
-
+       <MyInvitations />
       {error && !modal && <div className="ws-alert" role="alert">{error} <button type="button" onClick={() => setError("")}>Đóng</button></div>}
       {workspaces === undefined ? (
         <div className="ws-panel ws-empty">Đang tải Workspace từ Convex...</div>
@@ -142,6 +143,14 @@ export default function WorkspaceManager() {
               </div>
             )}
           </section>
+           {/* Module 03: Quản lý thành viên và phân quyền */}
+          {workspaceId && activeWorkspace && (
+            <TeamMembersPanel
+              key={workspaceId}
+              workspaceId={workspaceId}
+              myRole={activeWorkspace.myRole}
+            />
+          )}
         </>
       )}
 

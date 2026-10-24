@@ -74,4 +74,28 @@ export default defineSchema({
       "workspaceId",
       "status",
     ]),
+
+    workspaceInvitations: defineTable({
+    workspaceId: v.id("workspaces"),
+    email: v.string(),
+    invitedBy: v.string(),
+    role: v.union(v.literal("admin"), v.literal("member"), v.literal("viewer")),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("declined"), v.literal("revoked")),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    respondedAt: v.optional(v.number()),
+  })
+    .index("by_email_status", ["email", "status"])
+    .index("by_workspace_email", ["workspaceId", "email"])
+    .index("by_workspace_status", ["workspaceId", "status"]),
+
+  memberAuditLogs: defineTable({
+    workspaceId: v.id("workspaces"),
+    actorId: v.string(),
+    targetUserId: v.string(),
+    action: v.string(),
+    detail: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_workspace", ["workspaceId", "createdAt"]),
+
 });
