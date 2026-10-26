@@ -106,10 +106,20 @@ async function createDeadlineAlert(
       q.eq("alertKey", alertKey)
     )
     .first();
+/**
+ * Nếu cảnh báo đang hoạt động thì bỏ qua.
+ *
+ * isActive === undefined được coi là active
+ * để tương thích bản ghi cũ.
+ *
+ * Nếu isActive === false:
+ * cho phép tạo notification mới.
+ */
+if (existing && existing.isActive !== false) {
+  return false;
+}
 
-  if (existing) {
-    return false;
-  }
+const isReactivation = existing?.isActive === false;
 
   const message =
     kind === "deadline_upcoming"
@@ -117,19 +127,38 @@ async function createDeadlineAlert(
       : `Công việc "${task.title}" đã quá hạn (${dueDate}).`;
 
   // Tạo thông báo dùng chung NotificationCenter.
-  await ctx.db.insert("notifications", {
-    recipientId,
-    actorId: "system",
-    projectId: task.projectId,
-    taskId: task._id,
-    kind,
-    message,
-    isRead: false,
-    isActive: true,
-    createdAt: now,
-  });
+  
+await ctx.db.insert("notifications", {
+  recipientId,
+  actorId: "system",
+  projectId: task.projectId,
+  taskId: task._id,
+  kind,
+  message,
+  isRead: false,
+  isActive: true,
+  createdAt: now,
+});
+
 
   // Ghi nhận mốc đã thông báo.
+ 
+if (existing && isReactivation) {
+  // Tái kích hoạt bản ghi lịch sử.
+  // Không tạo alertKey thứ hai.
+  await ctx.db.patch(existing._id, {
+    isActive: true,
+    invalidatedAt: undefined,
+  });
+
+  console.log("[Deadline Alert REACTIVATED]", {
+    taskId: task._id,
+    recipientId,
+    kind,
+    dueDate,
+  });
+} else {
+  // Cảnh báo xuất hiện lần đầu.
   await ctx.db.insert("deadlineAlerts", {
     alertKey,
     taskId: task._id,
@@ -140,6 +169,8 @@ async function createDeadlineAlert(
     isActive: true,
     createdAt: now,
   });
+}
+
 
   return true;
 }
