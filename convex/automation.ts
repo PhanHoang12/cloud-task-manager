@@ -1,5 +1,5 @@
 
-import { internalMutation } from "./_generated/server";
+import { internalMutation,internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
@@ -175,49 +175,102 @@ if (existing && isReactivation) {
   return true;
 }
 
+
 /**
- * Cron entry point:
- * Chạy mỗi 15 phút.
+ * Module 06.5.3 — Automation Execution History
+ *
+ * Một automationRun đại diện cho một lượt quét.
+ * Mọi trang của lượt quét đều dùng cùng runId.
  */
+
+type RunSource = "scheduled" | "manual";
+
+async function startDeadlineScan(
+  ctx: MutationCtx,
+  source: RunSource
+): Promise<void> {
+  const now = Date.now();
+
+  // Tạo bản ghi lịch sử đầu tiên.
+  const runId = await ctx.db.insert("automationRuns", {
+    source,
+  status: "running",
+  startedAt: now,
+  lastHeartbeatAt: now,
+  pagesProcessed: 0,
+  tasksScanned: 0,
+  upcomingTasks: 0,
+  overdueTasks: 0,
+  notificationsCreated: 0,
+  skippedTasks: 0,
+
+  });
+
+  // Mỗi worker sẽ nhận cùng một runId.
+  await ctx.scheduler.runAfter(
+    0,
+    internal.automation.scanDeadlinePage,
+    {
+      runId,
+      cursor: null,
+      now,
+      pageNumber: 1,
+    }
+  );
+
+  console.log("[Automation] Scan scheduled", {
+    runId,
+    source,
+    executedAt: new Date(now).toISOString(),
+  });
+}
+
+// Dùng khi bạn chạy lệnh thủ công:
+// npx convex run automation:scanDeadlines
 export const scanDeadlines = internalMutation({
   args: {},
 
   handler: async (ctx): Promise<void> => {
-    const now = Date.now();
+    await startDeadlineScan(ctx, "manual");
+  },
+});
 
-    await ctx.scheduler.runAfter(
-      0,
-      internal.automation.scanDeadlinePage,
-      {
-        cursor: null,
-        now,
-        pageNumber: 1,
-      }
-    );
+// Entry point dành riêng cho Cron 15 phút.
+export const scanScheduledDeadlines = internalMutation({
+  args: {},
 
-    console.log("[Automation] Scan scheduled", {
-      executedAt: new Date(now).toISOString(),
-    });
+  handler: async (ctx): Promise<void> => {
+    await startDeadlineScan(ctx, "scheduled");
   },
 });
 
 /**
- * Worker:
- * Quét tối đa 100 Task mỗi lần thực thi.
+ * Worker xử lý từng trang.
+ *
+ * Trạng thái và bộ đếm được cập nhật trong
+ * cùng transaction với cảnh báo của trang đó.
  */
 export const scanDeadlinePage = internalMutation({
   args: {
+    runId: v.id("automationRuns"),
     cursor: v.union(v.string(), v.null()),
     now: v.number(),
     pageNumber: v.number(),
   },
 
   handler: async (ctx, args): Promise<void> => {
-    const { cursor, now, pageNumber } = args;
+    const { runId, cursor, now, pageNumber } = args;
 
-    // Chọn rộng hơn 24 giờ để tránh bỏ sót
-    // khi lọc theo ngày; classifyDeadline()
-    // sẽ quyết định chính xác.
+    const run = await ctx.db.get(runId);
+
+    if (!run || run.status !== "running") {
+      console.log("[Automation] Run not active", {
+        runId,
+      });
+      return;
+    }
+
+    // Giữ nguyên logic chọn deadline như 06.4.
     const upperDate = vietnamDate(now + 2 * DAY_MS);
 
     const result = await ctx.db
@@ -247,10 +300,7 @@ export const scanDeadlinePage = internalMutation({
         continue;
       }
 
-      const kind = classifyDeadline(
-        task.dueDate,
-        now
-      );
+      const kind = classifyDeadline(task.dueDate, now);
 
       if (!kind) {
         skipped++;
@@ -274,6 +324,7 @@ export const scanDeadlinePage = internalMutation({
         created++;
 
         console.log("[Deadline Alert CREATED]", {
+          runId,
           taskId: task._id,
           recipientId: task.assigneeId,
           kind,
@@ -282,7 +333,51 @@ export const scanDeadlinePage = internalMutation({
       }
     }
 
+    // Cộng dồn số liệu từ tất cả các trang.
+    const newTotals = {
+      pagesProcessed: run.pagesProcessed + 1,
+      tasksScanned:
+        run.tasksScanned + result.page.length,
+      upcomingTasks: run.upcomingTasks + upcoming,
+      overdueTasks: run.overdueTasks + overdue,
+      notificationsCreated:
+        run.notificationsCreated + created,
+      skippedTasks: run.skippedTasks + skipped,
+    };
+
+const heartbeatAt = Date.now();
+
+if (result.isDone) {
+  // Hoàn thành toàn bộ lượt quét.
+  await ctx.db.patch(runId, {
+    ...newTotals,
+    lastHeartbeatAt: heartbeatAt,
+    status: "completed",
+    finishedAt: heartbeatAt,
+  });
+} else {
+  // Worker đã hoàn thành một trang.
+  await ctx.db.patch(runId, {
+    ...newTotals,
+    lastHeartbeatAt: heartbeatAt,
+  });
+
+  // Tiếp tục trang sau, giữ nguyên runId.
+  await ctx.scheduler.runAfter(
+    0,
+    internal.automation.scanDeadlinePage,
+    {
+      runId,
+      cursor: result.continueCursor,
+      now,
+      pageNumber: pageNumber + 1,
+    }
+  );
+}
+
+
     console.log("[Automation] Page completed", {
+      runId,
       pageNumber,
       scanned: result.page.length,
       upcoming,
@@ -292,21 +387,28 @@ export const scanDeadlinePage = internalMutation({
       completed: result.isDone,
     });
 
-    if (!result.isDone) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.automation.scanDeadlinePage,
-        {
-          cursor: result.continueCursor,
-          now,
-          pageNumber: pageNumber + 1,
-        }
-      );
-    } else {
+    if (result.isDone) {
       console.log("[Automation] Deadline scan finished", {
-        pagesProcessed: pageNumber,
+        runId,
+        ...newTotals,
         completedAt: new Date().toISOString(),
       });
     }
+  },
+});
+
+/**
+ * Query nội bộ xem 20 lượt chạy gần nhất.
+ * Chưa mở API này trực tiếp cho frontend.
+ */
+export const recentRuns = internalQuery({
+  args: {},
+
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("automationRuns")
+      .withIndex("by_started")
+      .order("desc")
+      .take(20);
   },
 });

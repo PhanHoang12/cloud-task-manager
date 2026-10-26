@@ -198,7 +198,11 @@ notifications: defineTable({
     "recipientId",
     "createdAt",
   ])
-  .index("by_task", ["taskId"]),
+  .index("by_task", ["taskId"])
+  .index("by_project_created", [
+  "projectId",
+  "createdAt",
+]),
 
 deadlineAlerts: defineTable({
   alertKey: v.string(),
@@ -222,6 +226,36 @@ deadlineAlerts: defineTable({
 })
   .index("by_alert_key", ["alertKey"])
   .index("by_task", ["taskId"]),
+automationRuns: defineTable({
+  source: v.union(
+    v.literal("scheduled"),
+    v.literal("manual")
+  ),
 
+  status: v.union(
+    v.literal("running"),
+    v.literal("completed"),
+    v.literal("failed")
+  ),
+
+  startedAt: v.number(),
+  finishedAt: v.optional(v.number()),
+  lastHeartbeatAt: v.optional(v.number()),
+
+
+  pagesProcessed: v.number(),
+  tasksScanned: v.number(),
+  upcomingTasks: v.number(),
+  overdueTasks: v.number(),
+  notificationsCreated: v.number(),
+  skippedTasks: v.number(),
+
+  errorMessage: v.optional(v.string()),
+})
+  .index("by_started", ["startedAt"])
+  .index("by_status_started", [
+  "status",
+  "startedAt",
+]),
 
 });

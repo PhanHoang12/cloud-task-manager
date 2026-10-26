@@ -91,6 +91,12 @@ export const update = mutation({ args: {
   const { project, membership } = await access(ctx, task.projectId, userId);
   checkWrite(project.status, membership.role);
   if (!canEdit(membership.role, userId, task)) throw new Error("Bạn không có quyền sửa Task.");
+  if(task.status === "done" && membership.role !=="owner" &&
+    membership.role !== "admin"){
+      throw new Error(
+        "Task này đã hoàn thành, chỉ có admin hoặc owner được sửa!"
+      );
+    }
   // Only managers may reassign tasks to other users.
   if (args.assigneeId !== task.assigneeId && membership.role !== "owner" && membership.role !== "admin") {
     throw new Error("Chỉ Owner/Admin được thay người phụ trách.");
@@ -156,7 +162,8 @@ export const remove = mutation({ args: { taskId: v.id("projectTasks") }, handler
   const userId = await requireUser(ctx);
   const task = await ctx.db.get(args.taskId);
   if (!task) throw new Error("Task không tồn tại.");
-  const { membership } = await access(ctx, task.projectId, userId);
+  const { project, membership } = await access(ctx, task.projectId, userId);
+  checkWrite(project.status, membership.role);
   if (membership.role !== "owner" && membership.role !== "admin") throw new Error("Chỉ Owner/Admin có thể xóa Task.");
   await log(ctx, { projectId: task.projectId, taskId: args.taskId, actorId: userId, type: "deleted", detail: task.title });
   await invalidateTaskDeadlineAlerts(ctx, args.taskId);

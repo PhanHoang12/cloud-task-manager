@@ -7,6 +7,8 @@ import "./kanban.css";
 import SubtaskPanel from "./SubtaskPanel";
 import TaskComments from "./TaskComments";
 import NotificationCenter from "./NotificationCenter";
+import AutomationDashboard from "./AutomationDashboard";
+
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -153,6 +155,7 @@ return (
         )}
       </div>
     </header>
+    <AutomationDashboard projectId={project._id} />
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
     <input className="kb-search" aria-label="Tìm Task" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
