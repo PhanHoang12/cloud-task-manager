@@ -257,5 +257,26 @@ automationRuns: defineTable({
   "status",
   "startedAt",
 ]),
+profiles: defineTable({
+  userId: v.string(),
+  // Authenticated account details used in Workspace member lists.
+  email: v.optional(v.string()),
+  accountName: v.optional(v.string()),
+  accountAvatarUrl: v.optional(v.string()),
+
+  fullName: v.string(),
+  bio: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  studentId: v.optional(v.string()),
+  department: v.optional(v.string()),
+  className: v.optional(v.string()),
+
+  avatarStorageId: v.optional(v.id("_storage")),
+  avatarUrl: v.optional(v.string()),
+
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"]),
 
 });
