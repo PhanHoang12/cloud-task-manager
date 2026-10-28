@@ -21,9 +21,24 @@ function checkTitle(title: string) {
 function checkDescription(description: string) {
   if (description.length > 2000) throw new Error("Mô tả tối đa 2000 ký tự.");
 }
+
 function checkDueDate(dueDate: string | undefined) {
-  if (dueDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) throw new Error("Ngày hạn không hợp lệ.");
+  if (dueDate === undefined) return;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    throw new Error("Ngày hạn không hợp lệ.");
+  }
+
+  const date = new Date(`${dueDate}T00:00:00Z`);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== dueDate
+  ) {
+    throw new Error("Ngày hạn không hợp lệ.");
+  }
 }
+
 export const list = query({
   args: {},
   handler: async (ctx) => {
