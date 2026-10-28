@@ -8,11 +8,19 @@
  * @module
  */
 
+import type * as automation from "../automation.js";
+import type * as automationHistory from "../automationHistory.js";
+import type * as automationStats from "../automationStats.js";
+import type * as automationWatchdog from "../automationWatchdog.js";
 import type * as comments from "../comments.js";
+import type * as crons from "../crons.js";
+import type * as deadlineLifecycle from "../deadlineLifecycle.js";
+import type * as http from "../http.js";
 import type * as invitations from "../invitations.js";
 import type * as members from "../members.js";
 import type * as notifications from "../notifications.js";
 import type * as permissions from "../permissions.js";
+import type * as profiles from "../profiles.js";
 import type * as projectTasks from "../projectTasks.js";
 import type * as projects from "../projects.js";
 import type * as subtasks from "../subtasks.js";
@@ -26,11 +34,19 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  automation: typeof automation;
+  automationHistory: typeof automationHistory;
+  automationStats: typeof automationStats;
+  automationWatchdog: typeof automationWatchdog;
   comments: typeof comments;
+  crons: typeof crons;
+  deadlineLifecycle: typeof deadlineLifecycle;
+  http: typeof http;
   invitations: typeof invitations;
   members: typeof members;
   notifications: typeof notifications;
   permissions: typeof permissions;
+  profiles: typeof profiles;
   projectTasks: typeof projectTasks;
   projects: typeof projects;
   subtasks: typeof subtasks;

@@ -1,0 +1,221 @@
+/* CloudTask Pro — single navigation shell (Module 07) */
+.ctp-shell { --ctp-side: 264px; display: grid; grid-template-columns: var(--ctp-side) minmax(0, 1fr); min-height: 100vh; background: #f6f8fc; color: #132544; }
+.ctp-shell *, .ctp-shell *::before, .ctp-shell *::after { box-sizing: border-box; }
+.ctp-sidebar { position: sticky; top: 0; align-self: start; height: 100vh; padding: 24px 16px; background: #111d35; color: #e7efff; display: flex; flex-direction: column; gap: 24px; }
+.ctp-brand { display: flex; align-items: center; gap: 11px; padding: 3px 10px 16px; font-size: 18px; font-weight: 750; letter-spacing: -.35px; }
+.ctp-brand strong { color: #a8b8ff; }
+.ctp-brand small { display: block; margin-top: 4px; font-size: 9px; letter-spacing: 2px; color: #8498c0; font-weight: 800; }
+.ctp-brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #5455eb; color: white; flex: 0 0 auto; }
+.ctp-navigation-label { padding: 0 12px; font-size: 10px; font-weight: 750; letter-spacing: 1.55px; color: #91a3c6; }
+.ctp-navigation { display: flex; flex-direction: column; gap: 7px; }
+.ctp-nav-item { display: flex; width: 100%; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid transparent; border-radius: 13px; background: transparent; color: #c6d3ed; text-align: left; font-size: 14px; font-weight: 650; cursor: pointer; transition: background .16s, color .16s, transform .16s; }
+.ctp-nav-item:hover { background: #223453; color: white; transform: translateX(2px); }
+.ctp-nav-item.is-active { background: #3656a1; color: #fff; box-shadow: inset 3px 0 0 #a6b8ff; }
+.ctp-nav-item:focus-visible { outline: 3px solid #a6b8ff; outline-offset: 2px; }
+.ctp-sidebar-note { display: flex; align-items: flex-start; gap: 10px; margin-top: auto; padding: 15px 13px; border: 1px solid #2c4065; border-radius: 13px; color: #bfd0f1; background: #1a2b48; font-size: 12px; line-height: 1.6; }
+.ctp-sidebar-note svg { flex: 0 0 auto; color: #8babff; }
+.ctp-right { min-width: 0; }
+.ctp-header { min-height: 82px; padding: 16px 36px; display: flex; justify-content: space-between; align-items: center; gap: 16px; background: white; border-bottom: 1px solid #e3e9f4; }
+.ctp-header-text { display: flex; flex-direction: column; gap: 5px; }
+.ctp-header-overline { font-size: 10px; letter-spacing: 1.4px; color: #7c8aa3; font-weight: 750; }
+.ctp-header-text strong { color: #1b2d4b; font-size: 18px; }
+.ctp-header-account { display: flex; align-items: center; flex: 0 0 auto; }
+.ctp-content { min-width: 0; }
+/* Override old .app-shell / .main layout only for personal dashboard. */
+.ctp-content .personal-dashboard { display: block; min-width: 0; min-height: 0; width: 100%; background: transparent; }
+.ctp-content .personal-dashboard > .main { margin: 0; width: 100%; max-width: none; min-width: 0; padding: 30px 36px; min-height: 0; }
+.ctp-content .personal-dashboard .topbar { position: static; width: auto; padding: 0; margin: 0 0 26px; background: transparent; box-shadow: none; border: 0; }
+.ctp-content .personal-dashboard .stats { margin-top: 0; }
+.ctp-content .personal-dashboard .task-section { min-width: 0; }
+@media (max-width: 900px) {
+  .ctp-shell { --ctp-side: 216px; }
+  .ctp-header { padding: 15px 22px; }
+  .ctp-content .personal-dashboard > .main { padding: 24px 22px; }
+  .ctp-brand { font-size: 15px; }
+  .ctp-nav-item { font-size: 13px; padding: 12px 10px; }
+}
+@media (max-width: 680px) {
+  .ctp-shell { display: block; }
+  .ctp-sidebar { position: relative; height: auto; padding: 14px 12px; gap: 10px; }
+  .ctp-brand { padding-bottom: 2px; }
+  .ctp-navigation-label, .ctp-sidebar-note { display: none; }
+  .ctp-navigation { flex-direction: row; gap: 7px; overflow-x: auto; }
+  .ctp-nav-item { flex: 0 0 auto; width: auto; white-space: nowrap; font-size: 12px; padding: 10px 12px; }
+  .ctp-header { min-height: 68px; padding: 12px 16px; }
+  .ctp-content .personal-dashboard > .main { padding: 20px 14px; }
+}
+
+/* =========================================
+   MODULE 07.3 - PROFILE TOPBAR MENU
+   ========================================= */
+
+.ctp-profile-menu {
+  position: relative;
+  z-index: 30;
+}
+
+.ctp-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 5px;
+  max-width: 260px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1e293b;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.ctp-profile-trigger:hover {
+  background: #f1f5ff;
+  border-color: #c7d2fe;
+}
+
+.ctp-profile-trigger:focus-visible {
+  outline: 3px solid #a5b4fc;
+  outline-offset: 2px;
+}
+
+.ctp-profile-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ctp-profile-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.ctp-profile-name {
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ctp-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 31;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.ctp-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 32;
+  width: min(300px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+}
+
+.ctp-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 13px 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ctp-profile-info strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.ctp-profile-info small {
+  font-size: 12px;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+
+.ctp-profile-dropdown > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ctp-profile-dropdown > button:hover {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.ctp-profile-dropdown > button.ctp-profile-logout {
+  color: #dc2626;
+}
+
+.ctp-profile-dropdown > button.ctp-profile-logout:hover {
+  background: #fef2f2;
+}
+
+@media (max-width: 600px) {
+  .ctp-profile-name {
+    display: none;
+  }
+
+  .ctp-profile-trigger {
+    gap: 5px;
+    padding-right: 8px;
+  }
+}
+
+/* Keep mobile navigation in document flow so it never covers the board. */
+.ctp-sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ctp-menu-toggle { display: none; }
+.ctp-header-text { min-width: 0; }
+.ctp-header-text strong { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .ctp-shell { display: block; }
+  .ctp-sidebar { position: relative; height: auto; min-height: 72px; padding: 12px 16px; gap: 10px; }
+  .ctp-brand { padding: 0; }
+  .ctp-navigation-label, .ctp-sidebar-note { display: none; }
+  .ctp-menu-toggle { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 44px; height: 44px; padding: 8px; border: 1px solid #41567c; border-radius: 9px; background: #223453; color: white; }
+  .ctp-sidebar:not(.is-expanded) .ctp-navigation { display: none; }
+  .ctp-navigation { flex-direction: column; overflow: visible; }
+  .ctp-nav-item { width: 100%; min-height: 44px; white-space: normal; }
+  .ctp-header { min-height: 68px; padding: 12px 16px; gap: 12px; }
+  .ctp-header-overline { font-size: 9px; letter-spacing: .8px; }
+  .ctp-header-text strong { font-size: 16px; }
+  .ctp-content .personal-dashboard > .main { padding: 20px 14px; }
+}
+
+.ctp-content .personal-dashboard .search { min-width: 0; }
+.ctp-content .personal-dashboard .topbar > div { min-width: 0; }
+.ctp-content .personal-dashboard .task h3 { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .ctp-content .personal-dashboard .topbar { flex-wrap: wrap; }
+  .ctp-content .personal-dashboard .toolbar { flex-direction: column; align-items: stretch; }
+  .ctp-content .personal-dashboard .search input { width: 100%; }
+  .ctp-content .personal-dashboard .section-head { flex-wrap: wrap; gap: 12px; }
+  .ctp-content .personal-dashboard .task-meta { flex-wrap: wrap; }
+}

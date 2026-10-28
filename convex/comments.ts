@@ -53,14 +53,45 @@ export const create = mutation({
   },
 });
 
+
 export const remove = mutation({
-  args: { commentId: v.id("taskComments") },
+  args: {
+    commentId: v.id("taskComments"),
+  },
+
   handler: async (ctx, { commentId }) => {
     const comment = await ctx.db.get(commentId);
-    if (!comment) throw new Error("Bình luận không tồn tại.");
-    const { userId, membership } = await access(ctx, comment.taskId);
-    if (userId !== comment.authorId && membership.role !== "owner" && membership.role !== "admin")
+
+    if (!comment) {
+      throw new Error("Bình luận không tồn tại.");
+    }
+
+    const { userId, project, membership } = await access(
+      ctx,
+      comment.taskId
+    );
+
+    // Project không hoạt động thì không được xóa comment.
+    if (project.status !== "active") {
+      throw new Error(
+        "Không thể xóa bình luận trong dự án đã ngừng hoạt động."
+      );
+    }
+
+    // Viewer chỉ có quyền đọc.
+    if (membership.role === "viewer") {
+      throw new Error("Viewer không có quyền xóa bình luận.");
+    }
+
+    // Chỉ tác giả hoặc Owner/Admin được xóa.
+    const isManager =
+      membership.role === "owner" ||
+      membership.role === "admin";
+
+    if (userId !== comment.authorId && !isManager) {
       throw new Error("Không có quyền xóa bình luận.");
+    }
+
     await ctx.db.delete(commentId);
   },
 });

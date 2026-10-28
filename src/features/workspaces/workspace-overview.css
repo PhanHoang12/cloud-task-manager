@@ -1,0 +1,61 @@
+.wo-overview { --wo-ink: #17243e; --wo-muted: #728099; margin-bottom: 26px; }
+.wo-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+.wo-metric { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 9px 12px; min-width: 0; padding: 20px; border: 1px solid var(--wo-border); border-radius: 16px; background: linear-gradient(135deg, #fff 20%, var(--wo-soft)); color: var(--wo-ink); font: inherit; text-align: left; box-shadow: 0 4px 18px #233b6307; }
+button.wo-metric { cursor: pointer; transition: border-color .18s, box-shadow .18s; }
+button.wo-metric:hover, button.wo-metric.is-selected { border-color: var(--wo-tone); box-shadow: 0 4px 18px color-mix(in srgb, var(--wo-tone) 12%, transparent); }
+.wo-violet { --wo-tone: #8b5cf6; --wo-soft: #f5f0ff; --wo-border: #e9e0fc; }
+.wo-indigo { --wo-tone: #6366f1; --wo-soft: #eef0ff; --wo-border: #e0e4fc; }
+.wo-blue { --wo-tone: #4f7df3; --wo-soft: #edf4ff; --wo-border: #dce8fc; }
+.wo-green { --wo-tone: #10b981; --wo-soft: #ebfbf4; --wo-border: #d3f0e3; }
+.wo-metric-icon { grid-row: 1 / 3; grid-column: 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: var(--wo-tone); background: var(--wo-soft); border: 1px solid var(--wo-border); }
+.wo-metric-label { color: #596985; font-size: 13px; line-height: 1.5; font-weight: 600; }
+.wo-metric > strong { color: var(--wo-tone); font-size: 32px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wo-metric > small { grid-column: 1 / -1; color: #728099; font-size: 11px; line-height: 1.5; margin-top: 3px; }
+.wo-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; }
+.wo-chart-card { min-width: 0; padding: 24px; border: 1px solid #e5ebf4; border-radius: 18px; background: white; box-shadow: 0 5px 20px #233b6308; }
+.wo-chart-heading { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.wo-eyebrow { display: inline-flex; align-items: center; gap: 6px; color: #7c8aab; font-size: 9px; font-weight: 750; letter-spacing: 1.3px; }
+.wo-chart-heading h2 { margin: 8px 0 6px; color: var(--wo-ink); font-size: 19px; letter-spacing: -.4px; }
+.wo-chart-heading p { margin: 0; color: var(--wo-muted); font-size: 12px; line-height: 1.6; }
+.wo-range { max-width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #e1e7f2; border-radius: 9px; background: #f8faff; color: #566580; font: inherit; font-size: 11px; }
+.wo-donut-layout { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 230px; }
+.wo-donut-wrap { position: relative; flex: 0 1 205px; min-width: 160px; }
+.wo-donut { display: block; width: 100%; overflow: visible; }
+.wo-donut-segment { cursor: pointer; transition: opacity .16s, stroke-width .16s; }
+.wo-donut-segment:hover, .wo-donut-segment:focus-visible { stroke-width: 28; outline: none; }
+.wo-donut-segment:focus-visible { filter: drop-shadow(0 0 3px #233b6390); }
+.wo-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 7px; pointer-events: none; }
+.wo-donut-center strong { font-size: 36px; color: var(--wo-ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.wo-donut-center span { max-width: 125px; color: #8090a8; text-align: center; font-size: 11px; }
+.wo-legend { flex: 1 1 170px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wo-legend-row { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; width: 100%; min-height: 44px; padding: 9px 8px; border: 1px solid transparent; border-radius: 9px; background: transparent; text-align: left; font: inherit; font-size: 12px; color: #5c6c85; cursor: pointer; }
+.wo-legend-row:hover, .wo-legend-row.is-selected { background: #f5f8ff; border-color: #e2e9fa; }
+.wo-legend-row strong { color: #263751; font-size: 15px; }
+.wo-legend-row small { min-width: 30px; text-align: right; color: #8d99ad; font-size: 11px; }
+.wo-color-dot { display: inline-block; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; }
+.wo-chart-note { display: flex; justify-content: center; align-items: center; gap: 7px; min-height: 40px; padding: 10px 12px; border-radius: 10px; background: #f5f9fc; color: #668078; font-size: 11px; line-height: 1.6; text-align: center; }
+.wo-bars-chart { display: flex; gap: 12px; margin-top: 24px; padding-top: 16px; }
+.wo-axis { display: flex; flex-direction: column; justify-content: space-between; width: 22px; flex-shrink: 0; height: 180px; transform: translateY(-5px); color: #96a2b6; font-size: 10px; text-align: right; }
+.wo-bars { flex: 1; min-width: 0; display: grid; align-items: end; gap: 10px; background: repeating-linear-gradient(to bottom, #edf1f7 0px, #edf1f7 1px, transparent 1px, transparent 45px); background-size: 100% 181px; background-repeat: no-repeat; }
+.wo-bar-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 0 5px; border: 0; background: transparent; font: inherit; cursor: pointer; border-radius: 5px; }
+.wo-bar-track { position: relative; display: flex; justify-content: center; align-items: flex-end; height: 180px; width: 100%; }
+.wo-bar-stack { position: relative; display: flex; flex-direction: column-reverse; width: min(100%, 44px); border-radius: 6px 6px 0 0; background: #f5f7fb; transition: height .25s; }
+.wo-bar-segment { display: block; flex-shrink: 0; width: 100%; transition: opacity .16s; }
+.wo-bar-segment:last-child { border-radius: 6px 6px 0 0; }
+.wo-bar-value { position: absolute; bottom: calc(100% + 5px); left: 0; right: 0; text-align: center; color: #526380; font-size: 11px; font-weight: 750; }
+.wo-bar-zero { padding-bottom: 5px; color: #bdc7d5; font-size: 10px; }
+.wo-bar-label { display: block; padding: 6px 2px; border-radius: 6px; color: #74839c; text-align: center; font-size: 11px; }
+.wo-bar-label small { display: block; margin-top: 3px; color: #a0abc0; font-size: 9px; }
+.wo-bar-column:hover .wo-bar-label, .wo-bar-column.is-selected .wo-bar-label, .wo-bar-column:focus-visible .wo-bar-label { color: #4665e9; background: #eef2ff; }
+.wo-bar-detail { display: flex; flex-direction: column; gap: 5px; min-height: 58px; margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: #f7f9fd; line-height: 1.5; }
+.wo-bar-detail strong { color: #546581; font-size: 11px; font-weight: 650; }
+.wo-bar-detail span { color: #8a98af; font-size: 10px; }
+.wo-scope { margin: 12px 0 0; color: #8a98af; font-size: 11px; line-height: 1.6; }
+.wo-chart-loading { display: grid; place-items: center; min-height: 280px; color: #8392aa; font-size: 13px; background: #f8faff; border-radius: 12px; }
+.ws-filter-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 26px 0; color: #7a89a0; font-size: 12px; }
+.ws-filter-chip { padding: 6px 10px; border-radius: 7px; background: #eef2ff; color: #4665d4; font-size: 11px; font-weight: 650; }
+.ws-filter-summary button { margin-left: auto; }
+@media (max-width: 1250px) { .wo-charts { grid-template-columns: 1fr; } .wo-donut-layout { gap: 28px; } .wo-legend { flex: 0 1 290px; } }
+@media (max-width: 1050px) { .wo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 610px) { .wo-metrics { gap: 10px; } .wo-metric { padding: 15px 12px; gap: 8px; } .wo-metric-icon { width: 32px; height: 32px; border-radius: 10px; } .wo-metric-icon svg { width: 17px; height: 17px; } .wo-metric-label { font-size: 11px; } .wo-metric > strong { font-size: 29px; } .wo-metric > small { font-size: 10px; } .wo-chart-card { padding: 20px 16px; } .wo-donut-layout { flex-direction: column; gap: 0; } .wo-donut-wrap { flex: 0 0 auto; width: 200px; } .wo-legend { flex: 0 0 auto; width: 100%; } .wo-chart-note { margin-top: 12px; } .wo-bar-column { padding: 0 2px; } .wo-bars { gap: 5px; } .wo-bars-chart { gap: 8px; } .ws-filter-summary { margin: 14px 16px 0; } }
+@media (prefers-reduced-motion: reduce) { .wo-metric, .wo-donut-segment, .wo-bar-stack, .wo-bar-segment { transition: none; } }

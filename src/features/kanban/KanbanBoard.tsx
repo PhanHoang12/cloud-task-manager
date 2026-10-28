@@ -7,6 +7,10 @@ import "./kanban.css";
 import SubtaskPanel from "./SubtaskPanel";
 import TaskComments from "./TaskComments";
 import NotificationCenter from "./NotificationCenter";
+import AutomationDashboard from "./AutomationDashboard";
+
+
+import { useAction, useFeedback } from "../../components/Feedback";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -29,6 +33,8 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
   onBack: () => void;
 }) {
   const { user } = useUser();
+  const { notify, confirm } = useFeedback();
+  const { run, pending } = useAction();
   const tasks = useQuery(api.projectTasks.list, { projectId: project._id });
   const members = useQuery(api.workspaces.listMembers, { workspaceId });
   const create = useMutation(api.projectTasks.create);
@@ -75,9 +81,10 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
         await create({ projectId: project._id, title: title.trim(), description: description.trim(), priority,
           dueDate: dueDate || undefined, assigneeId: assigneeId || undefined });
       }
+      notify(editingTask ? "Đã lưu thay đổi công việc." : "Đã tạo công việc.");
       setTitle(""); setDescription(""); setDueDate("");
       setAssigneeId(""); setPriority("medium"); setEditingTask(null); setShowModal(false);
-    } catch (e) { setError(e instanceof Error ? e.message : "Không thể tạo Task."); }
+    } catch (e) { const message = e instanceof Error ? e.message : "Không thể lưu công việc."; setError(message); notify(message, "error"); }
     finally { setBusy(false); }
   }
 
@@ -92,26 +99,21 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
     setAssigneeId(task.assigneeId ?? ""); setError(""); setShowModal(true);
   }
   async function dropTask(targetStatus: Status, beforeTaskId?: Id<"projectTasks">) {
-    if (!dragId) return;
+    if (!dragId || pending) return;
     const task = tasks?.find(t => t._id === dragId);
     setDragId(null);
     if (!task || !canChange(task, targetStatus) || !active) return;
-    setError("");
-    try { await moveTask({taskId: task._id, targetStatus, beforeTaskId}); }
-    catch (e) { setError(e instanceof Error ? e.message : "Không thể kéo thả Task."); }
+    await run(() => moveTask({ taskId: task._id, targetStatus, beforeTaskId }), "Đã di chuyển công việc.", "Không thể di chuyển công việc.", `move:${task._id}`);
   }
 
   async function move(task: Task, status: Status) {
-    setError("");
-    try { await setStatus({ taskId: task._id, status }); }
-    catch (e) { setError(e instanceof Error ? e.message : "Không thể đổi trạng thái."); }
+    if (!canChange(task, status)) return;
+    await run(() => setStatus({ taskId: task._id, status }), "Đã cập nhật trạng thái.", "Không thể đổi trạng thái.", `move:${task._id}`);
   }
 
   async function deleteTask(task: Task) {
-    if (!window.confirm(`Xóa “${task.title}”?`)) return;
-    setError("");
-    try { await remove({ taskId: task._id }); }
-    catch (e) { setError(e instanceof Error ? e.message : "Không thể xóa Task."); }
+    if (pending || !await confirm({ title: "Xóa công việc?", description: `Công việc “${task.title}” cùng các dữ liệu liên quan sẽ bị xóa. Bạn không thể hoàn tác thao tác này.` })) return;
+    await run(() => remove({ taskId: task._id }), "Đã xóa công việc.", "Không thể xóa công việc.", `delete:${task._id}`);
   }
 
   
@@ -145,7 +147,7 @@ return (
         {canCreate && (
           <button
             type="button"
-            className="kb-primary"
+            className="kb-primary ui-button ui-primary"
             onClick={openCreate}
           >
             + Công việc mới
@@ -153,34 +155,35 @@ return (
         )}
       </div>
     </header>
+    <AutomationDashboard projectId={project._id} />
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
     <input className="kb-search" aria-label="Tìm Task" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
     <div className="kb-toolbar"><span>Kéo thả để đổi trạng thái hoặc sắp xếp • Có thể dùng dropdown thay thế</span>
       <button type="button" onClick={() => setShowHistory(v => !v)}>{showHistory ? "Ẩn lịch sử" : "Xem lịch sử"}</button></div>
-    <div className="kb-columns">
+    <div className="kb-columns" role="region" aria-label="Bảng Kanban, cuộn ngang để xem các cột" tabIndex={0}>
       {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}
         onDragOver={e => {if (dragId) e.preventDefault();}}
         onDrop={e => { e.preventDefault(); void dropTask(lane.key); }}>
         <div className="kb-column-title"><strong>{lane.title}</strong><span>{visible.filter(t => t.status === lane.key).length}</span></div>
         {tasks === undefined ? <p className="kb-muted">Đang tải...</p> :
-          visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id}
-            draggable={canChange(task, task.status)}
+          visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id} aria-busy={pending===`move:${task._id}` || pending===`delete:${task._id}`}
+            draggable={!pending && canChange(task, task.status)}
             onDragStart={e => {e.dataTransfer.effectAllowed = "move"; setDragId(task._id);}}
             onDragEnd={() => setDragId(null)}
             onDragOver={e => {if (dragId && dragId !== task._id) e.preventDefault();}}
             onDrop={e => {e.stopPropagation(); e.preventDefault(); void dropTask(lane.key, task._id);}}>
             <div className="kb-card-top"><span className={`kb-priority kb-${task.priority}`}>{priorityLabel[task.priority]}</span>
-              {isManager && <button type="button" onClick={() => void deleteTask(task)} aria-label={`Xóa ${task.title}`}>×</button>}</div>
+              {isManager && active && <button className="ui-button ui-danger ui-icon" disabled={pending!==null} aria-busy={pending===`delete:${task._id}`} type="button" onClick={() => void deleteTask(task)} aria-label={`Xóa ${task.title}`}>×</button>}</div>
             <h3>{task.title}</h3>
-            {canChange(task, task.status) && <button type="button" className="kb-edit" onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
+            {canChange(task, task.status) && <button type="button" className="kb-edit ui-button ui-secondary" disabled={pending!==null} onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
             <div className="kb-details">{task.dueDate && <span>Hạn: {task.dueDate}</span>}
               <span>{task.assigneeId ? `Phụ trách: ${task.assigneeId === user?.id ? "Tôi" : task.assigneeId.slice(-8)}` : "Chưa phân công"}</span></div>
               <label>
                 Trạng thái
                 <select
                   value={task.status}
-                  disabled={!canChange(task, task.status)}
+                  disabled={pending!==null || !canChange(task, task.status)}
                   onChange={(e) =>
                     void move(task, e.target.value as Status)
                   }
@@ -196,6 +199,7 @@ return (
                   ))}
                 </select>
               </label>
+            {(pending===`move:${task._id}` || pending===`delete:${task._id}`) && <span className="ui-inline-busy" role="status">Đang xử lý...</span>}
             {/* Module 04.4 — Subtasks & Progress Tracking */}
             <SubtaskPanel
               taskId={task._id}
@@ -215,20 +219,20 @@ return (
           <small> • {new Date(a.createdAt).toLocaleString("vi-VN")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
     </section>}
     {showModal && <div className="kb-overlay" onMouseDown={e => { if(e.target === e.currentTarget && !busy) setShowModal(false); }}>
-      <form className="kb-dialog" onSubmit={e => void submit(e)}>
-        <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button type="button" onClick={() => setShowModal(false)} disabled={busy}>×</button></div>
-        <label>Tiêu đề *<input required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
-        <label>Mô tả<textarea rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
-        <div className="kb-form-row"><label>Ưu tiên<select value={priority} onChange={e => setPriority(e.target.value as Priority)}>
+      <form role="dialog" aria-modal="true" aria-label={editingTask ? "Chỉnh sửa công việc" : "Tạo công việc"} className="kb-dialog" onSubmit={e => void submit(e)}>
+        <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button className="ui-button ui-secondary ui-icon" aria-label="Đóng" type="button" onClick={() => setShowModal(false)} disabled={busy}>×</button></div>
+        <label>Tiêu đề *<input disabled={busy} required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
+        <label>Mô tả<textarea disabled={busy} rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
+        <div className="kb-form-row"><label>Ưu tiên<select disabled={busy} value={priority} onChange={e => setPriority(e.target.value as Priority)}>
           {Object.entries(priorityLabel).map(([k,v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-          <label>Hạn hoàn thành<input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></label></div>
-        <label>Người phụ trách<select disabled={!!editingTask && !isManager} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+          <label>Hạn hoàn thành<input disabled={busy} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></label></div>
+        <label>Người phụ trách<select disabled={busy || (!!editingTask && !isManager)} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
           <option value="">Chưa phân công</option>
           {members?.filter(m => m.role !== "viewer").map(m => <option key={m._id} value={m.userId}>{m.userId === user?.id ? "Tôi" : m.userId}</option>)}
         </select></label>
         {error && <p role="alert" className="kb-error">{error}</p>}
-        <div className="kb-actions"><button type="button" disabled={busy} onClick={() => setShowModal(false)}>Hủy</button>
-          <button type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
+        <div className="kb-actions"><button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setShowModal(false)}>Hủy</button>
+          <button className="ui-button ui-primary" aria-busy={busy} type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
       </form>
     </div>}
   </div>

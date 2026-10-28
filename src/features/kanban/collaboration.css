@@ -653,3 +653,27 @@
   height: 18px;
   pointer-events: none;
 }
+
+/* =====================================
+   MODULE 06 - DEADLINE NOTIFICATIONS
+   ===================================== */
+
+.notify-icon-deadline_upcoming {
+  background: #fff4d9;
+  color: #d97706;
+}
+
+.notify-icon-deadline_overdue {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.notify-icon-assigned {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.notify-icon-comment {
+  background: #dbeafe;
+  color: #2563eb;
+}

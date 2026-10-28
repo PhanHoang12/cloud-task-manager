@@ -129,7 +129,8 @@ export default defineSchema({
 })
   .index("by_project", ["projectId"])
   .index("by_project_status", ["projectId", "status"])
-  .index("by_assignee", ["assigneeId"]),
+  .index("by_assignee", ["assigneeId"])
+  .index("by_due_date", ["dueDate"]),
 
   
 projectTaskActivities: defineTable({
@@ -172,15 +173,110 @@ taskComments: defineTable({
   createdAt: v.number(),
 }).index("by_task_created", ["taskId", "createdAt"]),
 
+
 notifications: defineTable({
   recipientId: v.string(),
   actorId: v.string(),
+
   projectId: v.id("projects"),
   taskId: v.id("projectTasks"),
-  kind: v.union(v.literal("comment"), v.literal("assigned")),
+  isActive: v.optional(v.boolean()),
+  invalidatedAt: v.optional(v.number()),
+
+  kind: v.union(
+    v.literal("comment"),
+    v.literal("assigned"),
+    v.literal("deadline_upcoming"),
+    v.literal("deadline_overdue")
+  ),
+
   message: v.string(),
   isRead: v.boolean(),
   createdAt: v.number(),
-}).index("by_recipient_created", ["recipientId", "createdAt"]),
+})
+  .index("by_recipient_created", [
+    "recipientId",
+    "createdAt",
+  ])
+  .index("by_task", ["taskId"])
+  .index("by_project_created", [
+  "projectId",
+  "createdAt",
+]),
+
+deadlineAlerts: defineTable({
+  alertKey: v.string(),
+
+  taskId: v.id("projectTasks"),
+  projectId: v.id("projects"),
+
+  recipientId: v.string(),
+  
+  isActive: v.optional(v.boolean()),
+  invalidatedAt: v.optional(v.number()),
+
+
+  kind: v.union(
+    v.literal("deadline_upcoming"),
+    v.literal("deadline_overdue")
+  ),
+
+  dueDate: v.string(),
+  createdAt: v.number(),
+})
+  .index("by_alert_key", ["alertKey"])
+  .index("by_task", ["taskId"]),
+automationRuns: defineTable({
+  source: v.union(
+    v.literal("scheduled"),
+    v.literal("manual")
+  ),
+
+  status: v.union(
+    v.literal("running"),
+    v.literal("completed"),
+    v.literal("failed")
+  ),
+
+  startedAt: v.number(),
+  finishedAt: v.optional(v.number()),
+  lastHeartbeatAt: v.optional(v.number()),
+
+
+  pagesProcessed: v.number(),
+  tasksScanned: v.number(),
+  upcomingTasks: v.number(),
+  overdueTasks: v.number(),
+  notificationsCreated: v.number(),
+  skippedTasks: v.number(),
+
+  errorMessage: v.optional(v.string()),
+})
+  .index("by_started", ["startedAt"])
+  .index("by_status_started", [
+  "status",
+  "startedAt",
+]),
+profiles: defineTable({
+  userId: v.string(),
+  // Authenticated account details used in Workspace member lists.
+  email: v.optional(v.string()),
+  accountName: v.optional(v.string()),
+  accountAvatarUrl: v.optional(v.string()),
+
+  fullName: v.string(),
+  bio: v.optional(v.string()),
+  phone: v.optional(v.string()),
+  studentId: v.optional(v.string()),
+  department: v.optional(v.string()),
+  className: v.optional(v.string()),
+
+  avatarStorageId: v.optional(v.id("_storage")),
+  avatarUrl: v.optional(v.string()),
+
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_user", ["userId"]),
 
 });

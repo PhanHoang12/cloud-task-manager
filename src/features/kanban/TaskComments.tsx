@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import "./collaboration.css";
 
+import { useAction, useFeedback } from "../../components/Feedback";
+
 type Props = {
   taskId: Id<"projectTasks">;
   canComment: boolean;
@@ -41,51 +43,21 @@ export default function TaskComments({
 
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [deletingId, setDeletingId] =
-    useState<Id<"taskComments"> | null>(null);
-  const [error, setError] = useState("");
+  const { run, pending } = useAction();
+  const { confirm } = useFeedback();
+  const busy = pending === "create";
+  const deletingId = pending === "create" ? null : pending;
 
-  async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     const content = text.trim();
-    if (!content || busy || !canComment) return;
-
-    setBusy(true);
-    setError("");
-
-    try {
-      await create({ taskId, content });
-      setText("");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Không gửi được bình luận."
-      );
-    } finally {
-      setBusy(false);
-    }
+    if (!content || pending || !canComment) return;
+    if (await run(() => create({ taskId, content }), "Đã gửi bình luận.", "Không gửi được bình luận.", "create")) setText("");
   }
 
   async function deleteComment(id: Id<"taskComments">) {
-    if (deletingId) return;
-
-    setDeletingId(id);
-    setError("");
-
-    try {
-      await remove({ commentId: id });
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Không xóa được bình luận."
-      );
-    } finally {
-      setDeletingId(null);
-    }
+    if (pending || !await confirm({ title: "Xóa bình luận?", description: "Bình luận này sẽ bị xóa. Bạn không thể hoàn tác thao tác này." })) return;
+    await run(() => remove({ commentId: id }), "Đã xóa bình luận.", "Không xóa được bình luận.", id);
   }
 
   return (
@@ -168,8 +140,9 @@ export default function TaskComments({
                       {canDelete && (
                         <button
                           type="button"
-                          className="tc-delete"
-                          disabled={deletingId === comment._id}
+                          className="tc-delete ui-button ui-danger"
+                          aria-busy={deletingId === comment._id}
+                          disabled={pending!==null}
                           onClick={() =>
                             void deleteComment(comment._id)
                           }
@@ -191,6 +164,7 @@ export default function TaskComments({
             <form className="tc-form" onSubmit={submit}>
               <textarea
                 className="tc-input"
+                disabled={pending!==null}
                 aria-label="Viết bình luận"
                 placeholder="Viết bình luận cho nhóm..."
                 value={text}
@@ -204,8 +178,9 @@ export default function TaskComments({
 
                 <button
                   type="submit"
-                  className="tc-send"
-                  disabled={busy || !text.trim()}
+                  className="tc-send ui-button ui-primary"
+                  aria-busy={busy}
+                  disabled={pending!==null || !text.trim()}
                 >
                   <Send size={15} />
                   {busy ? "Đang gửi..." : "Gửi"}
@@ -214,11 +189,7 @@ export default function TaskComments({
             </form>
           )}
 
-          {error && (
-            <p className="tc-error" role="alert">
-              {error}
-            </p>
-          )}
+
         </div>
       )}
     </section>

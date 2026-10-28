@@ -85,14 +85,47 @@ export const decline = mutation({
   },
 });
 
+
 export const revoke = mutation({
-  args: {invitationId: v.id("workspaceInvitations")},
+  args: {
+    invitationId: v.id("workspaceInvitations"),
+  },
+
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
+
     const invite = await ctx.db.get(args.invitationId);
-    if (!invite || invite.status !== "pending") throw new Error("Lời mời không còn hiệu lực.");
-    await requireManager(ctx, invite.workspaceId, identity.subject);
-    await ctx.db.patch(invite._id, {status: "revoked", respondedAt: Date.now()});
-    await ctx.db.insert("memberAuditLogs", {workspaceId: invite.workspaceId, actorId: identity.subject, action: "invite_revoked", targetUserId: invite.email, createdAt: Date.now()});
-  }
+
+    if (!invite || invite.status !== "pending") {
+      throw new Error("Lời mời không còn hiệu lực.");
+    }
+
+    const manager = await requireManager(
+      ctx,
+      invite.workspaceId,
+      identity.subject
+    );
+
+    // Admin không được thu hồi lời mời cấp quyền Admin.
+    if (manager.role === "admin" && invite.role === "admin") {
+      throw new Error(
+        "Chỉ Owner được thu hồi lời mời Admin."
+      );
+    }
+
+    const now = Date.now();
+
+    await ctx.db.patch(invite._id, {
+      status: "revoked",
+      respondedAt: now,
+    });
+
+    await ctx.db.insert("memberAuditLogs", {
+      workspaceId: invite.workspaceId,
+      actorId: identity.subject,
+      action: "invite_revoked",
+      targetUserId: invite.email,
+      createdAt: now,
+    });
+  },
 });

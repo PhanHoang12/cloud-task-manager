@@ -5,12 +5,38 @@ import { requireIdentity, requireManager, requireMember, requireOwner } from "./
 const role = v.union(v.literal("admin"), v.literal("member"), v.literal("viewer"));
 
 export const list = query({
-  args: {workspaceId: v.id("workspaces")},
-  handler: async (ctx,args) => {
+  args: { workspaceId: v.id("workspaces") },
+  returns: v.array(v.object({
+    _id: v.id("workspaceMembers"), _creationTime: v.number(),
+    workspaceId: v.id("workspaces"), userId: v.string(),
+    role: v.union(v.literal("owner"), role), joinedAt: v.number(),
+    fullName: v.union(v.string(), v.null()),
+    email: v.union(v.string(), v.null()),
+    avatarUrl: v.union(v.string(), v.null()),
+  })),
+  handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
-    await requireMember(ctx,args.workspaceId,identity.subject);
-    return ctx.db.query("workspaceMembers").withIndex("by_workspace", q=>q.eq("workspaceId",args.workspaceId)).take(100);
-  }
+    await requireMember(ctx, args.workspaceId, identity.subject);
+    const members = await ctx.db.query("workspaceMembers")
+      .withIndex("by_workspace", q => q.eq("workspaceId", args.workspaceId)).take(100);
+    return await Promise.all(members.map(async member => {
+      const profile = await ctx.db.query("profiles")
+        .withIndex("by_user", q => q.eq("userId", member.userId)).unique();
+      const mine = member.userId === identity.subject;
+      const customName = profile?.fullName.trim();
+      const fullName = (customName && customName !== "Người dùng" ? customName : null) ||
+        profile?.accountName || (mine ? identity.name : null) || null;
+      const storedAvatar = profile?.avatarStorageId
+        ? await ctx.storage.getUrl(profile.avatarStorageId)
+        : profile?.avatarUrl;
+      // Project only public account details; never expose bio, phone or student data.
+      return {
+        ...member, fullName,
+        email: profile?.email || (mine ? identity.email : null) || null,
+        avatarUrl: storedAvatar || profile?.accountAvatarUrl || (mine ? identity.pictureUrl : null) || null,
+      };
+    }));
+  },
 });
 
 export const changeRole = mutation({

@@ -2,3 +2,20 @@
 
 /* Module 04.3 */
 .kb-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 15px;color:#667892;font-size:13px}.kb-toolbar button,.kb-edit{border:1px solid #dce2ee;border-radius:8px;background:white;color:#3e5ad5;cursor:pointer;padding:7px 10px}.kb-edit{font-size:12px;margin-bottom:10px}.kb-card[draggable="true"]{cursor:grab}.kb-card[draggable="true"]:active{cursor:grabbing}.kb-history{margin-top:22px;background:white;border:1px solid #dae1ed;border-radius:12px;padding:18px}.kb-history ul{list-style:none;padding:0;max-height:300px;overflow:auto}.kb-history li{padding:9px 0;border-bottom:1px solid #e5eaf2;font-size:13px}.kb-history small{color:#7c8ba3}
+
+.kb-page { min-width: 0; max-width: 100%; }
+.kb-columns { width: 100%; max-width: 100%; min-width: 0; padding-bottom: 12px; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+.kb-column { min-width: 0; scroll-snap-align: start; }
+.kb-header-info { min-width: 0; overflow-wrap: anywhere; }
+.kb-toolbar { flex-wrap: wrap; }
+.kb-toolbar > span { min-width: 0; flex: 1 1 220px; }
+.kb-toolbar button { flex-shrink: 0; }
+.kb-card > label { min-width: 0; }
+.kb-card select { min-width: 0; }
+.kb-dialog { max-height: calc(100dvh - 32px); }
+@media (max-width: 760px) {
+  .kb-page { padding: 20px 14px; }
+  .kb-columns { grid-template-columns: repeat(4, minmax(min(290px, calc(100vw - 48px)), 1fr)); }
+  .kb-header { align-items: stretch; flex-direction: column; }
+  .kb-header-actions { flex-wrap: wrap; }
+}
