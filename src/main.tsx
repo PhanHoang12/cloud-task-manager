@@ -12,7 +12,12 @@ const convexUrl=import.meta.env.VITE_CONVEX_URL;
 if(!clerkKey || !convexUrl) throw new Error("Thiếu VITE_CLERK_PUBLISHABLE_KEY hoặc VITE_CONVEX_URL. Xem README.md");
 const convex=new ConvexReactClient(convexUrl);
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode><ClerkProvider publishableKey={clerkKey} afterSignOutUrl="/">
+  <React.StrictMode>
+        <ClerkProvider
+      publishableKey={clerkKey}
+      afterSignOutUrl="/"
+      proxyUrl={import.meta.env.VITE_CLERK_PROXY_URL || undefined}
+    >
     <ConvexProviderWithClerk client={convex} useAuth={useAuth}><FeedbackProvider><App /></FeedbackProvider></ConvexProviderWithClerk>
   </ClerkProvider></React.StrictMode>
 );
