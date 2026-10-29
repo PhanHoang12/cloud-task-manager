@@ -1,4 +1,4 @@
-.wo-overview { --wo-ink: #17243e; --wo-muted: #728099; margin-bottom: 26px; }
+.wo-overview { --wo-ink: #17243e; --wo-muted: var(--text-secondary); margin-bottom: 26px; }
 .wo-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
 .wo-metric { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 9px 12px; min-width: 0; padding: 20px; border: 1px solid var(--wo-border); border-radius: 16px; background: linear-gradient(135deg, #fff 20%, var(--wo-soft)); color: var(--wo-ink); font: inherit; text-align: left; box-shadow: 0 4px 18px #233b6307; }
 button.wo-metric { cursor: pointer; transition: border-color .18s, box-shadow .18s; }
@@ -10,7 +10,7 @@ button.wo-metric:hover, button.wo-metric.is-selected { border-color: var(--wo-to
 .wo-metric-icon { grid-row: 1 / 3; grid-column: 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: var(--wo-tone); background: var(--wo-soft); border: 1px solid var(--wo-border); }
 .wo-metric-label { color: #596985; font-size: 13px; line-height: 1.5; font-weight: 600; }
 .wo-metric > strong { color: var(--wo-tone); font-size: 32px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
-.wo-metric > small { grid-column: 1 / -1; color: #728099; font-size: 11px; line-height: 1.5; margin-top: 3px; }
+.wo-metric > small { grid-column: 1 / -1; color: var(--wo-muted); font-size: 11px; line-height: 1.5; margin-top: 3px; }
 .wo-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; }
 .wo-chart-card { min-width: 0; padding: 24px; border: 1px solid #e5ebf4; border-radius: 18px; background: white; box-shadow: 0 5px 20px #233b6308; }
 .wo-chart-heading { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }

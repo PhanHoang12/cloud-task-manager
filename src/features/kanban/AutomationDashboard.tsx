@@ -4,6 +4,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import "./automation-dashboard.css";
 import AutomationHistory from "./AutomationHistory";
+import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 
 type Props = {
   projectId: Id<"projects">;
@@ -265,7 +266,7 @@ export default function AutomationDashboard({
             Cập nhật: {formattedTime}
           </span>
         </div>
-        <AutomationHistory />
+        <ScreenErrorBoundary scope="Lịch sử nhắc hạn" resetKey={projectId}><AutomationHistory /></ScreenErrorBoundary>
       </details>
     </section>
   );

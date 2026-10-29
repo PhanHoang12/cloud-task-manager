@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:ui": "playwright test --config tests/ui/playwright.config.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.85",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -24,7 +24,9 @@
 .ui-button svg { flex-shrink: 0; }
 .ui-button[aria-busy="true"]::before { content: ""; width: 14px; height: 14px; flex: 0 0 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: ui-spin .8s linear infinite; }
 .ui-toast-region { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 100000; display: flex; flex-direction: column; gap: 10px; width: min(420px, calc(100vw - 32px)); pointer-events: none; }
-.ui-toast { display: flex; align-items: center; gap: 10px; border: 1px solid; border-radius: 12px; padding: 12px; box-shadow: 0 8px 30px #10203c26; pointer-events: auto; font-size: 13px; line-height: 1.5; }
+.ui-toast { display: flex; align-items: center; gap: 10px; border: 1px solid; border-radius: 12px; padding: 12px; box-shadow: 0 8px 30px #10203c26; pointer-events: none; font-size: 13px; line-height: 1.5; }
+/* Passive toast content lets underlying controls receive pointer input. */
+.ui-toast > button { pointer-events: auto; }
 .ui-toast > svg { flex-shrink: 0; }
 .ui-toast > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ui-toast-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
@@ -39,3 +41,12 @@
 @keyframes ui-spin { to { transform: rotate(360deg); } }
 @media (max-width: 760px) { .ui-button.ui-button { min-height: 44px; } .ui-button.ui-icon { width: 44px; min-width: 44px; } .ui-toast-region { top: max(12px, env(safe-area-inset-top)); bottom: auto; } }
 @media (prefers-reduced-motion: reduce) { .ui-button { transition: none; } .ui-button[aria-busy="true"]::before { animation: none; } }
+
+/* Native modal shell: retain each feature's existing overlay and form styling. */
+dialog.ui-modal {
+  position: fixed; inset: 0; margin: 0; border: 0;
+  width: 100%; max-width: none; height: 100%; max-height: none;
+  color: inherit;
+}
+dialog.ui-modal:not([open]) { display: none; }
+dialog.ui-modal::backdrop { background: transparent; }

@@ -147,7 +147,7 @@
 
 .tc-time {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 

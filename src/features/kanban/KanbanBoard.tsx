@@ -11,6 +11,8 @@ import AutomationDashboard from "./AutomationDashboard";
 
 
 import { useAction, useFeedback } from "../../components/Feedback";
+import ModalDialog from "../../components/ModalDialog";
+import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 import { activityLabels, formatActivityDetail, formatDueDate, getErrorMessage } from "../../lib/uiText";
 
 type Task = Doc<"projectTasks">;
@@ -143,7 +145,7 @@ return (
       </div>
 
       <div className="kb-header-actions">
-        <NotificationCenter />
+        <ScreenErrorBoundary scope="Thông báo" resetKey={project._id} compact><NotificationCenter /></ScreenErrorBoundary>
 
         {canCreate && (
           <button
@@ -156,7 +158,7 @@ return (
         )}
       </div>
     </header>
-    <AutomationDashboard projectId={project._id} />
+    <ScreenErrorBoundary scope="Tiến độ và nhắc hạn" resetKey={project._id}><AutomationDashboard projectId={project._id} /></ScreenErrorBoundary>
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
     <input className="kb-search" aria-label="Tìm công việc" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
@@ -202,13 +204,17 @@ return (
               </label>
             {(pending===`move:${task._id}` || pending===`delete:${task._id}`) && <span className="ui-inline-busy" role="status">Đang xử lý...</span>}
             {/* Module 04.4 — Subtasks & Progress Tracking */}
+            <ScreenErrorBoundary scope="Công việc con" resetKey={task._id} compact>
             <SubtaskPanel
               taskId={task._id}
               editable={canChange(task, task.status)}/>
+            </ScreenErrorBoundary>
+            <ScreenErrorBoundary scope="Thảo luận" resetKey={task._id} compact>
               <TaskComments
             taskId={task._id}
             canComment={active && role !== "viewer"}
             canModerate={isManager}/>
+            </ScreenErrorBoundary>
             </article>)}
 
         {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">Chưa có công việc</p>}
@@ -219,8 +225,8 @@ return (
         <ul>{activities.map(a => <li key={a._id}><strong>{activityLabels[a.type]}</strong> — {formatActivityDetail(a.type, a.detail)}
           <small> • {new Date(a.createdAt).toLocaleString("vi-VN")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
     </section>}
-    {showModal && <div className="kb-overlay" onMouseDown={e => { if(e.target === e.currentTarget && !busy) setShowModal(false); }}>
-      <form role="dialog" aria-modal="true" aria-label={editingTask ? "Chỉnh sửa công việc" : "Tạo công việc"} className="kb-dialog" onSubmit={e => void submit(e)}>
+    {showModal && <ModalDialog className="kb-overlay" label={editingTask ? "Chỉnh sửa công việc" : "Tạo công việc"} busy={busy} onDismiss={() => setShowModal(false)}>
+      <form className="kb-dialog" onSubmit={e => void submit(e)}>
         <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button className="ui-button ui-secondary ui-icon" aria-label="Đóng" type="button" onClick={() => setShowModal(false)} disabled={busy}>×</button></div>
         <label>Tiêu đề *<input disabled={busy} required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
         <label>Mô tả<textarea disabled={busy} rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
@@ -235,7 +241,7 @@ return (
         <div className="kb-actions"><button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setShowModal(false)}>Hủy</button>
           <button className="ui-button ui-primary" aria-busy={busy} type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
       </form>
-    </div>}
+    </ModalDialog>}
   </div>
 );
 }

@@ -12,6 +12,8 @@ import KanbanBoard from "../kanban/KanbanBoard";
 import WorkspaceOverview, { projectMonthKey, projectMonthLabel, type StatusFilter } from "./WorkspaceOverview";
 
 import { useAction, useFeedback } from "../../components/Feedback";
+import ModalDialog from "../../components/ModalDialog";
+import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 import { getErrorMessage, roleLabels } from "../../lib/uiText";
 
 type Modal = "workspace" | "project" | null;
@@ -88,12 +90,14 @@ export default function WorkspaceManager() {
 
   if (selectedProject && workspaceId && activeWorkspace) {
   return (
+    <ScreenErrorBoundary scope="Bảng công việc" resetKey={selectedProject._id} onReturn={() => setSelectedProjectId(null)} returnLabel="Trở về danh sách dự án" allowReload>
     <KanbanBoard
       project={selectedProject}
       workspaceId={workspaceId}
       role={activeWorkspace.myRole}
       onBack={() => setSelectedProjectId(null)}
     />
+    </ScreenErrorBoundary>
   );
 }
 
@@ -128,7 +132,9 @@ export default function WorkspaceManager() {
             </select>
             <span className="ws-role"><ShieldCheck size={15} /> Vai trò: {activeWorkspace ? roleLabels[activeWorkspace.myRole] : "Đang tải..."}</span>
           </div>
-          <WorkspaceOverview projects={projects} workspaceCount={workspaces.length} statusFilter={statusFilter} monthFilter={monthFilter} onStatusChange={setStatusFilter} onMonthChange={setMonthFilter} />
+          <ScreenErrorBoundary scope="Tổng quan dự án" resetKey={workspaceId}>
+            <WorkspaceOverview projects={projects} workspaceCount={workspaces.length} statusFilter={statusFilter} monthFilter={monthFilter} onStatusChange={setStatusFilter} onMonthChange={setMonthFilter} />
+          </ScreenErrorBoundary>
           <section className="ws-panel ws-projects">
             <div className="ws-section-head">
               <div><h2>Dự án trong không gian</h2><p>Quản lý dự án theo trạng thái và quyền thành viên.</p></div>
@@ -175,29 +181,31 @@ export default function WorkspaceManager() {
               </div>
             )}
           </section>
-          <MyInvitations />
+          <ScreenErrorBoundary scope="Lời mời" resetKey={workspaceId}><MyInvitations /></ScreenErrorBoundary>
            {/* Module 03: Quản lý thành viên và phân quyền */}
           {workspaceId && activeWorkspace && (
+            <ScreenErrorBoundary scope="Thành viên nhóm" resetKey={workspaceId}>
             <TeamMembersPanel
               key={workspaceId}
               workspaceId={workspaceId}
               myRole={activeWorkspace.myRole}
             />
+            </ScreenErrorBoundary>
           )}
         </>
       )}
 
-      {workspaces?.length === 0 && <MyInvitations />}
+      {workspaces?.length === 0 && <ScreenErrorBoundary scope="Lời mời"><MyInvitations /></ScreenErrorBoundary>}
 
-      {modal && <div className="ws-overlay" onMouseDown={(e) => {if(e.target === e.currentTarget && !busy) setModal(null);}}>
-        <form role="dialog" aria-modal="true" aria-label={modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"} className="ws-dialog" onSubmit={(e) => void submit(e)}>
+      {modal && <ModalDialog className="ws-overlay" label={modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"} busy={busy} onDismiss={() => setModal(null)}>
+        <form className="ws-dialog" onSubmit={(e) => void submit(e)}>
           <div className="ws-dialog-top"><div><p className="ws-overline">CLOUDTASK PRO</p><h2>{modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"}</h2></div><button className="ui-button ui-secondary ui-icon" type="button" aria-label="Đóng" onClick={() => setModal(null)} disabled={busy}><X size={21}/></button></div>
-          <label>{modal === "workspace" ? "Tên không gian" : "Tên dự án"} *<input disabled={busy} autoFocus required minLength={3} maxLength={modal === "workspace" ? 80 : 100} value={name} onChange={(e) => setName(e.target.value)} placeholder={modal === "workspace" ? "Ví dụ: Nhóm điện toán đám mây" : "Ví dụ: Ứng dụng quản lý công việc"}/></label>
+          <label>{modal === "workspace" ? "Tên không gian" : "Tên dự án"} *<input disabled={busy} required minLength={3} maxLength={modal === "workspace" ? 80 : 100} value={name} onChange={(e) => setName(e.target.value)} placeholder={modal === "workspace" ? "Ví dụ: Nhóm điện toán đám mây" : "Ví dụ: Ứng dụng quản lý công việc"}/></label>
           <label>Mô tả<textarea disabled={busy} value={description} maxLength={modal === "workspace" ? 500 : 1000} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Mô tả ngắn gọn mục tiêu..."/></label>
           {error && <p className="ws-form-error" role="alert">{error}</p>}
           <div className="ws-dialog-actions"><button type="button" className="ws-btn ui-button ui-secondary" onClick={() => setModal(null)} disabled={busy}>Hủy</button><button className="ws-btn ui-button ui-primary" aria-busy={busy} disabled={busy || name.trim().length < 3} type="submit">{busy ? "Đang lưu..." : "Tạo mới"}</button></div>
         </form>
-      </div>}
+      </ModalDialog>}
     </div>
   );
 }

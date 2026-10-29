@@ -28,6 +28,8 @@ import {
   Menu,
 } from "lucide-react";
 import "./app-layout.css";
+import ModalDialog from "./components/ModalDialog";
+import ScreenErrorBoundary from "./components/ScreenErrorBoundary";
 import { useAction, useFeedback } from "./components/Feedback";
 import WorkspaceManager from "./features/workspaces/WorkspaceManager";
 import ProfileSettings from "./features/profile/ProfileSettings";
@@ -70,7 +72,7 @@ function TaskDashboard(){
    <div className="toolbar"><div className="filters">{(["all","todo","doing","done"] as const).map(f=><button key={f} className={filter===f?"filter selected":"filter"} onClick={()=>setFilter(f)}>{f==="all"?"Tất cả":statusNames[f]} <span>{counts[f]}</span></button>)}</div><label className="search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Tìm công việc..." aria-label="Tìm công việc"/></label></div>
    {tasks===undefined?<p className="empty">Đang tải công việc...</p>:filtered.length===0?<div className="empty"><ListTodo size={36}/><h3>{counts.all === 0 ? "Chưa có công việc nào" : "Không tìm thấy công việc"}</h3><p>{counts.all === 0 ? "Tạo công việc đầu tiên để bắt đầu theo dõi tiến độ." : "Thử từ khóa khác hoặc thay đổi bộ lọc."}</p><button className="primary ui-button ui-primary" onClick={showCreate}><Plus size={16}/> Thêm công việc</button></div>:<div className="task-list">{filtered.map(t=><article className="task" key={t._id} aria-busy={pending===`status:${t._id}` || pending===`delete:${t._id}`}><button disabled={pending!==null} aria-busy={pending===`status:${t._id}` || pending===`delete:${t._id}`} className={`status-dot ${t.status}`} aria-label="Thay đổi trạng thái" title="Thay đổi trạng thái" onClick={()=>changeStatus(t,t.status==="todo"?"doing":t.status==="doing"?"done":"todo")}>{t.status==="done"?<CheckCircle2 size={22}/>:t.status==="doing"?<Clock3 size={22}/>:<CircleDashed size={22}/>}</button><div className="task-body">{pending===`status:${t._id}` && <span className="ui-inline-busy" role="status">Đang cập nhật...</span>}<div className="task-line"><h3 className={t.status==="done"?"completed":""}>{t.title}</h3><span className={`priority ${t.priority}`}>{priorityNames[t.priority]}</span></div>{t.description&&<p>{t.description}</p>}<div className="task-meta"><span className={`status-text ${t.status}`}>{statusNames[t.status]}</span><span>{t.dueDate?`Hạn: ${formatDueDate(t.dueDate)}`:"Không có hạn"}</span></div></div><div className="task-actions"><button className="ui-button ui-secondary ui-icon" disabled={pending!==null} aria-label="Sửa" title="Sửa công việc" onClick={()=>showEdit(t)}><Pencil size={17}/></button><button className="ui-button ui-danger ui-icon" disabled={pending!==null} aria-busy={pending===`delete:${t._id}`} aria-label="Xóa" title="Xóa công việc" onClick={()=>deleteTask(t)}><Trash2 size={17}/></button></div></article>)}</div>}
    </section><footer>CloudTask Pro · Quản lý công việc mọi lúc, mọi nơi</footer></main>
-   {open&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)setOpen(false)}}><form role="dialog" aria-modal="true" aria-label={editing?"Chỉnh sửa công việc":"Tạo công việc"} className="modal" onSubmit={save}><div className="modal-head"><div><h2>{editing?"Chỉnh sửa công việc":"Tạo công việc mới"}</h2><p>Thông tin được lưu và đồng bộ tự động.</p></div><button type="button" className="icon-btn ui-button ui-secondary ui-icon" aria-label="Đóng" disabled={busy} onClick={()=>setOpen(false)}><X size={21}/></button></div><label>Tiêu đề *<input disabled={busy} required maxLength={120} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Ví dụ: Hoàn thành báo cáo cuối kỳ"/></label><label>Mô tả<textarea disabled={busy} maxLength={2000} rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Ghi chú thêm..."/></label><div className="form-row"><label>Mức ưu tiên<select disabled={busy} value={form.priority} onChange={e=>setForm({...form,priority:e.target.value as Priority})}><option value="low">Thấp</option><option value="medium">Trung bình</option><option value="high">Cao</option></select></label><label>Hạn hoàn thành<input disabled={busy} type="date" value={form.dueDate} onChange={e=>setForm({...form,dueDate:e.target.value})}/></label></div>{editing&&<label>Trạng thái<select disabled={busy} value={form.status} onChange={e=>setForm({...form,status:e.target.value as Status})}><option value="todo">Cần làm</option><option value="doing">Đang thực hiện</option><option value="done">Hoàn thành</option></select></label>}{error&&<p className="error" role="alert">{error}</p>}<div className="modal-buttons"><button type="button" className="secondary ui-button ui-secondary" disabled={busy} onClick={()=>setOpen(false)}>Hủy</button><button className="primary ui-button ui-primary" aria-busy={busy} disabled={busy||!form.title.trim()} type="submit">{busy?"Đang lưu...":editing?"Lưu thay đổi":"Tạo công việc"}</button></div></form></div>}
+   {open&&<ModalDialog className="overlay" label={editing?"Chỉnh sửa công việc":"Tạo công việc"} busy={busy} onDismiss={()=>setOpen(false)}><form className="modal" onSubmit={save}><div className="modal-head"><div><h2>{editing?"Chỉnh sửa công việc":"Tạo công việc mới"}</h2><p>Thông tin được lưu và đồng bộ tự động.</p></div><button type="button" className="icon-btn ui-button ui-secondary ui-icon" aria-label="Đóng" disabled={busy} onClick={()=>setOpen(false)}><X size={21}/></button></div><label>Tiêu đề *<input disabled={busy} required maxLength={120} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Ví dụ: Hoàn thành báo cáo cuối kỳ"/></label><label>Mô tả<textarea disabled={busy} maxLength={2000} rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Ghi chú thêm..."/></label><div className="form-row"><label>Mức ưu tiên<select disabled={busy} value={form.priority} onChange={e=>setForm({...form,priority:e.target.value as Priority})}><option value="low">Thấp</option><option value="medium">Trung bình</option><option value="high">Cao</option></select></label><label>Hạn hoàn thành<input disabled={busy} type="date" value={form.dueDate} onChange={e=>setForm({...form,dueDate:e.target.value})}/></label></div>{editing&&<label>Trạng thái<select disabled={busy} value={form.status} onChange={e=>setForm({...form,status:e.target.value as Status})}><option value="todo">Cần làm</option><option value="doing">Đang thực hiện</option><option value="done">Hoàn thành</option></select></label>}{error&&<p className="error" role="alert">{error}</p>}<div className="modal-buttons"><button type="button" className="secondary ui-button ui-secondary" disabled={busy} onClick={()=>setOpen(false)}>Hủy</button><button className="primary ui-button ui-primary" aria-busy={busy} disabled={busy||!form.title.trim()} type="submit">{busy?"Đang lưu...":editing?"Lưu thay đổi":"Tạo công việc"}</button></div></form></ModalDialog>}
  </div>
 }
 
@@ -254,15 +256,25 @@ function CloudTaskWorkspace() {
             <strong>{pageTitle}</strong>
           </div>
           <div className="ctp-header-account">
-            <AccountMenu
-              onOpenProfile={() => navigate("profile")}
-            />
+            <ScreenErrorBoundary scope="Tài khoản" resetKey={activePage} compact allowReload>
+              <AccountMenu
+                onOpenProfile={() => navigate("profile")}
+              />
+            </ScreenErrorBoundary>
           </div>
         </header>
         <div className="ctp-content">
-          {activePage === "personal" && <TaskDashboard />}
-          {activePage === "workspace" && <WorkspaceManager />}
-          {activePage === "profile" && <ProfileSettings />}
+          <ScreenErrorBoundary
+            scope={pageTitle}
+            resetKey={activePage}
+            onReturn={() => navigate(activePage === "workspace" ? "personal" : "workspace")}
+            returnLabel={activePage === "workspace" ? "Về công việc cá nhân" : "Về không gian làm việc"}
+            allowReload
+          >
+            {activePage === "personal" && <TaskDashboard />}
+            {activePage === "workspace" && <WorkspaceManager />}
+            {activePage === "profile" && <ProfileSettings />}
+          </ScreenErrorBoundary>
         </div>
       </div>
     </div>
@@ -282,6 +294,6 @@ function AuthConnectionNotice() {
  </section></div>;
 }
 
-export default function App(){const {isLoaded,isSignedIn}=useAuth();if(!isLoaded)return <div className="auth-loading">Đang tải phiên đăng nhập...</div>;return <><AuthLoading><div className="auth-loading">Đang xác thực phiên đăng nhập...</div></AuthLoading><Unauthenticated>{isSignedIn?<AuthConnectionNotice/>:<div className="landing"><div className="landing-card"><div className="landing-logo"><Cloud size={32}/></div><div className="eyebrow">QUẢN LÝ CÔNG VIỆC TRỰC TUYẾN</div><h1>Công việc rõ ràng.<br/><span>Tiến độ vượt trội.</span></h1><p>Quản lý công việc cá nhân và dự án nhóm, theo dõi tiến độ và nhận nhắc hạn trong cùng một nơi.</p><div className="landing-actions"><SignUpButton mode="modal"><button className="primary ui-button ui-primary">Tạo tài khoản <Plus size={17}/></button></SignUpButton><SignInButton mode="modal"><button className="secondary ui-button ui-secondary">Đăng nhập</button></SignInButton></div><small>Công việc cá nhân · Dự án nhóm · Nhắc hạn tự động</small></div></div>}</Unauthenticated><Authenticated><CloudTaskWorkspace /></Authenticated></>}
+export default function App(){const {isLoaded,isSignedIn}=useAuth();if(!isLoaded)return <div className="auth-loading">Đang tải phiên đăng nhập...</div>;return <><AuthLoading><div className="auth-loading">Đang xác thực phiên đăng nhập...</div></AuthLoading><Unauthenticated>{isSignedIn?<AuthConnectionNotice/>:<div className="landing"><div className="landing-card"><div className="landing-logo"><Cloud size={32}/></div><div className="eyebrow">QUẢN LÝ CÔNG VIỆC TRỰC TUYẾN</div><h1>Công việc rõ ràng.<br/><span>Tiến độ vượt trội.</span></h1><p>Quản lý công việc cá nhân và dự án nhóm, theo dõi tiến độ và nhận nhắc hạn trong cùng một nơi.</p><div className="landing-actions"><SignUpButton mode="modal"><button className="primary ui-button ui-primary">Tạo tài khoản <Plus size={17}/></button></SignUpButton><SignInButton mode="modal"><button className="secondary ui-button ui-secondary">Đăng nhập</button></SignInButton></div><small>Công việc cá nhân · Dự án nhóm · Nhắc hạn tự động</small></div></div>}</Unauthenticated><Authenticated><ScreenErrorBoundary scope="Ứng dụng" allowReload><CloudTaskWorkspace /></ScreenErrorBoundary></Authenticated></>}
 
 
