@@ -364,3 +364,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Keep the board visible while secondary statistics remain available on demand. */
+.ad-more { margin-top: 18px; border-top: 1px solid #e8edf5; }
+.ad-more > summary {
+  padding: 16px 0 4px;
+  color: #3655b3;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.ad-more > summary:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 4px; border-radius: 4px; }
+.ad-stat-label, .ad-stat-subtitle { overflow-wrap: anywhere; }
+.ad-stat-subtitle { color: #5e6d83; }
+.ad-eyebrow { letter-spacing: .7px; line-height: 1.6; }
+.ad-header > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.ad-footer { flex-wrap: wrap; }

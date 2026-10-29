@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@clerk/express": "^2.1.85",
+    "@clerk/localizations": "^4.24.3",
     "@clerk/react": "^6.4.3",
     "convex": "^1.0.0",
     "express": "^5.3.0",

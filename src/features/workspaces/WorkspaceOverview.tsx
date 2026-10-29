@@ -7,7 +7,7 @@ export type ProjectStatus = Doc<"projects">["status"];
 export type StatusFilter = ProjectStatus | "all";
 const percentFormatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 const percentage = (count: number, total: number) => percentFormatter.format(total ? count / total * 100 : 0);
-const monthFormatter = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit" });
+const monthFormatter = new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit" });
 
 export function projectMonthKey(timestamp: number) {
   const parts = monthFormatter.formatToParts(timestamp);
@@ -71,17 +71,17 @@ export default function WorkspaceOverview({ projects, workspaceCount, statusFilt
     if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectStatus(status); }
   }
 
-  return <section className="wo-overview" aria-label="Tổng quan Workspace" aria-busy={loading}>
+  return <section className="wo-overview" aria-label="Tổng quan không gian làm việc" aria-busy={loading}>
     <div className="wo-metrics">
       <article className="wo-metric wo-violet">
         <span className="wo-metric-icon"><Layers3 size={21} /></span>
-        <span className="wo-metric-label">Workspace của tôi</span>
+        <span className="wo-metric-label">Không gian của tôi</span>
         <strong>{workspaceCount}</strong><small>Không gian bạn có quyền truy cập</small>
       </article>
       <button type="button" className="wo-metric wo-indigo" aria-pressed={statusFilter === "all"} onClick={() => {onStatusChange("all"); onMonthChange(null);}} disabled={loading}>
         <span className="wo-metric-icon"><FolderKanban size={21} /></span>
         <span className="wo-metric-label">Tổng dự án</span>
-        <strong>{loading ? "—" : total}</strong><small>Trong Workspace đang chọn</small>
+        <strong>{loading ? "—" : total}</strong><small>Trong không gian đang chọn</small>
       </button>
       <button type="button" className={`wo-metric wo-blue ${statusFilter === "active" ? "is-selected" : ""}`} aria-pressed={statusFilter === "active"} onClick={() => selectStatus("active")} disabled={loading}>
         <span className="wo-metric-icon"><CircleDot size={21} /></span>
@@ -152,6 +152,6 @@ export default function WorkspaceOverview({ projects, workspaceCount, statusFilt
         </>}
       </article>
     </div>
-    <p className="wo-scope">Số liệu dự án thuộc Workspace đang chọn · Tự động cập nhật khi dữ liệu thay đổi.</p>
+    <p className="wo-scope">Số liệu dự án thuộc không gian đang chọn · Tự động cập nhật khi dữ liệu thay đổi.</p>
   </section>;
 }

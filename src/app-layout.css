@@ -4,11 +4,11 @@
 .ctp-sidebar { position: sticky; top: 0; align-self: start; height: 100vh; padding: 24px 16px; background: #111d35; color: #e7efff; display: flex; flex-direction: column; gap: 24px; }
 .ctp-brand { display: flex; align-items: center; gap: 11px; padding: 3px 10px 16px; font-size: 18px; font-weight: 750; letter-spacing: -.35px; }
 .ctp-brand strong { color: #a8b8ff; }
-.ctp-brand small { display: block; margin-top: 4px; font-size: 9px; letter-spacing: 2px; color: #8498c0; font-weight: 800; }
+.ctp-brand small { display: block; margin-top: 4px; font-size: 9px; letter-spacing: .6px; color: #a8b9d8; font-weight: 800; }
 .ctp-brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #5455eb; color: white; flex: 0 0 auto; }
 .ctp-navigation-label { padding: 0 12px; font-size: 10px; font-weight: 750; letter-spacing: 1.55px; color: #91a3c6; }
 .ctp-navigation { display: flex; flex-direction: column; gap: 7px; }
-.ctp-nav-item { display: flex; width: 100%; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid transparent; border-radius: 13px; background: transparent; color: #c6d3ed; text-align: left; font-size: 14px; font-weight: 650; cursor: pointer; transition: background .16s, color .16s, transform .16s; }
+.ctp-nav-item { display: flex; width: 100%; align-items: center; gap: 12px; padding: 13px 15px; border: 1px solid transparent; border-radius: 13px; background: transparent; color: #c6d3ed; text-align: left; font-size: 14px; line-height: 1.5; font-weight: 650; cursor: pointer; transition: background .16s, color .16s, transform .16s; }
 .ctp-nav-item:hover { background: #223453; color: white; transform: translateX(2px); }
 .ctp-nav-item.is-active { background: #3656a1; color: #fff; box-shadow: inset 3px 0 0 #a6b8ff; }
 .ctp-nav-item:focus-visible { outline: 3px solid #a6b8ff; outline-offset: 2px; }

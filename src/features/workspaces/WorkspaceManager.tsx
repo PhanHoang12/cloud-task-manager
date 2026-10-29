@@ -12,6 +12,7 @@ import KanbanBoard from "../kanban/KanbanBoard";
 import WorkspaceOverview, { projectMonthKey, projectMonthLabel, type StatusFilter } from "./WorkspaceOverview";
 
 import { useAction, useFeedback } from "../../components/Feedback";
+import { getErrorMessage, roleLabels } from "../../lib/uiText";
 
 type Modal = "workspace" | "project" | null;
 type ProjectStatus = "active" | "completed" | "archived";
@@ -71,10 +72,10 @@ export default function WorkspaceManager() {
       } else if (modal === "project" && workspaceId) {
         await createProject({ workspaceId, name: name.trim(), description: description.trim() });
       }
-      notify(modal === "workspace" ? "Đã tạo Workspace." : "Đã tạo dự án.");
+      notify(modal === "workspace" ? "Đã tạo không gian làm việc." : "Đã tạo dự án.");
       setModal(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Không thể lưu dữ liệu.";
+      const message = getErrorMessage(err, "Không thể lưu dữ liệu.");
       setError(message); notify(message, "error");
     } finally {
       setBusy(false);
@@ -100,37 +101,37 @@ export default function WorkspaceManager() {
     <div className="ws-page">
       <div className="ws-heading">
         <div>
-          <p className="ws-overline">CLOUDTASK PRO / TEAM WORKSPACE</p>
+          <p className="ws-overline">LÀM VIỆC NHÓM / TỔNG QUAN</p>
           <h1>Không gian làm việc</h1>
-          <p className="ws-muted">Quản lý các dự án chung với dữ liệu đồng bộ từ Convex Cloud.</p>
+          <p className="ws-muted">Theo dõi dự án, tiến độ và thành viên trong cùng một không gian.</p>
         </div>
         <button type="button" className="ws-btn ui-button ui-primary" onClick={() => openModal("workspace")}>
-          <Plus size={18} /> Workspace mới
+          <Plus size={18} /> Không gian mới
         </button>
       </div>
       {error && !modal && <div className="ws-alert" role="alert">{error} <button type="button" onClick={() => setError("")}>Đóng</button></div>}
       {workspaces === undefined ? (
-        <div className="ws-panel ws-empty">Đang tải Workspace từ Convex...</div>
+        <div className="ws-panel ws-empty">Đang tải không gian làm việc...</div>
       ) : workspaces.length === 0 ? (
         <div className="ws-panel ws-empty">
           <Layers3 size={38} />
-          <h2>Chưa có Workspace</h2>
-          <p>Tạo Workspace đầu tiên để quản lý các dự án của nhóm.</p>
-          <button className="ws-btn ui-button ui-primary" type="button" onClick={() => openModal("workspace")}>Tạo Workspace</button>
+          <h2>Chưa có không gian làm việc</h2>
+          <p>Tạo không gian làm việc đầu tiên để quản lý các dự án của nhóm.</p>
+          <button className="ws-btn ui-button ui-primary" type="button" onClick={() => openModal("workspace")}>Tạo không gian làm việc</button>
         </div>
       ) : (
         <>
           <div className="ws-panel ws-switcher">
-            <label htmlFor="workspace-select">Workspace đang chọn</label>
+            <label htmlFor="workspace-select">Không gian đang chọn</label>
             <select id="workspace-select" value={workspaceId ?? ""} onChange={(e) => {setSelectedId(e.target.value as Id<"workspaces">); setSearch(""); setStatusFilter("all"); setMonthFilter(null); setSelectedProjectId(null); setError("");}}>
               {workspaces.map((workspace) => <option key={workspace._id} value={workspace._id}>{workspace.name}</option>)}
             </select>
-            <span className="ws-role"><ShieldCheck size={15} /> Vai trò: {activeWorkspace?.myRole}</span>
+            <span className="ws-role"><ShieldCheck size={15} /> Vai trò: {activeWorkspace ? roleLabels[activeWorkspace.myRole] : "Đang tải..."}</span>
           </div>
           <WorkspaceOverview projects={projects} workspaceCount={workspaces.length} statusFilter={statusFilter} monthFilter={monthFilter} onStatusChange={setStatusFilter} onMonthChange={setMonthFilter} />
           <section className="ws-panel ws-projects">
             <div className="ws-section-head">
-              <div><h2>Dự án trong Workspace</h2><p>Quản lý dự án theo trạng thái và quyền thành viên.</p></div>
+              <div><h2>Dự án trong không gian</h2><p>Quản lý dự án theo trạng thái và quyền thành viên.</p></div>
               {canCreateProject && <button type="button" className="ws-btn ui-button ui-primary" onClick={() => openModal("project")}><Plus size={17}/> Dự án mới</button>}
             </div>
             <div className="ws-search"><Search size={18}/><input aria-label="Tìm dự án" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm dự án theo tên hoặc mô tả..." /></div>
@@ -141,7 +142,7 @@ export default function WorkspaceManager() {
               <button className="ui-button ui-secondary" type="button" onClick={() => {setStatusFilter("all"); setMonthFilter(null); setSearch("");}}>Xóa bộ lọc</button>
             </div>}
             {projects === undefined ? <div className="ws-empty">Đang tải dự án...</div> : visibleProjects.length === 0 ? (
-              <div className="ws-empty"><FolderKanban size={34}/><h3>Không có dự án phù hợp</h3><p>{search.trim() || statusFilter !== "all" || monthFilter ? "Thử từ khóa khác hoặc xóa bộ lọc để xem thêm dự án." : "Tạo dự án đầu tiên trong Workspace này."}</p></div>
+              <div className="ws-empty"><FolderKanban size={34}/><h3>Không có dự án phù hợp</h3><p>{search.trim() || statusFilter !== "all" || monthFilter ? "Thử từ khóa khác hoặc xóa bộ lọc để xem thêm dự án." : "Tạo dự án đầu tiên trong không gian làm việc này."}</p></div>
             ) : (
               <div className="ws-grid">
                 {visibleProjects.map((project) => (
@@ -160,7 +161,7 @@ export default function WorkspaceManager() {
                             <option value="archived">Đã lưu trữ</option>
                           </select>
                         </label>
-                      ) : <span><Users size={15}/> {activeWorkspace?.myRole}</span>}
+                      ) : <span><Users size={15}/> {activeWorkspace ? roleLabels[activeWorkspace.myRole] : "Đang tải..."}</span>}
                       <button
                         type="button"
                         className="kb-open-project ui-button ui-secondary ui-icon"
@@ -189,9 +190,9 @@ export default function WorkspaceManager() {
       {workspaces?.length === 0 && <MyInvitations />}
 
       {modal && <div className="ws-overlay" onMouseDown={(e) => {if(e.target === e.currentTarget && !busy) setModal(null);}}>
-        <form role="dialog" aria-modal="true" aria-label={modal === "workspace" ? "Tạo Workspace" : "Tạo dự án"} className="ws-dialog" onSubmit={(e) => void submit(e)}>
-          <div className="ws-dialog-top"><div><p className="ws-overline">CLOUDTASK PRO</p><h2>{modal === "workspace" ? "Tạo Workspace" : "Tạo dự án"}</h2></div><button className="ui-button ui-secondary ui-icon" type="button" aria-label="Đóng" onClick={() => setModal(null)} disabled={busy}><X size={21}/></button></div>
-          <label>{modal === "workspace" ? "Tên Workspace" : "Tên dự án"} *<input disabled={busy} autoFocus required minLength={3} maxLength={modal === "workspace" ? 80 : 100} value={name} onChange={(e) => setName(e.target.value)} placeholder={modal === "workspace" ? "Ví dụ: Cloud Computing Team" : "Ví dụ: CloudTask Pro v2"}/></label>
+        <form role="dialog" aria-modal="true" aria-label={modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"} className="ws-dialog" onSubmit={(e) => void submit(e)}>
+          <div className="ws-dialog-top"><div><p className="ws-overline">CLOUDTASK PRO</p><h2>{modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"}</h2></div><button className="ui-button ui-secondary ui-icon" type="button" aria-label="Đóng" onClick={() => setModal(null)} disabled={busy}><X size={21}/></button></div>
+          <label>{modal === "workspace" ? "Tên không gian" : "Tên dự án"} *<input disabled={busy} autoFocus required minLength={3} maxLength={modal === "workspace" ? 80 : 100} value={name} onChange={(e) => setName(e.target.value)} placeholder={modal === "workspace" ? "Ví dụ: Nhóm điện toán đám mây" : "Ví dụ: Ứng dụng quản lý công việc"}/></label>
           <label>Mô tả<textarea disabled={busy} value={description} maxLength={modal === "workspace" ? 500 : 1000} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Mô tả ngắn gọn mục tiêu..."/></label>
           {error && <p className="ws-form-error" role="alert">{error}</p>}
           <div className="ws-dialog-actions"><button type="button" className="ws-btn ui-button ui-secondary" onClick={() => setModal(null)} disabled={busy}>Hủy</button><button className="ws-btn ui-button ui-primary" aria-busy={busy} disabled={busy || name.trim().length < 3} type="submit">{busy ? "Đang lưu..." : "Tạo mới"}</button></div>

@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { ClerkProvider, useAuth } from "@clerk/react";
+import { clerkVi } from "./lib/clerkVi";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import App from "./App";
@@ -14,6 +15,7 @@ const convex=new ConvexReactClient(convexUrl);
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
         <ClerkProvider
+      localization={clerkVi}
       publishableKey={clerkKey}
       afterSignOutUrl="/"
       proxyUrl={import.meta.env.VITE_CLERK_PROXY_URL || undefined}

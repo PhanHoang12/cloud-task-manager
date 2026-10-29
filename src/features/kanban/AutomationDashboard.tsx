@@ -53,7 +53,7 @@ export default function AutomationDashboard({
     return (
       <section className="ad-dashboard ad-loading">
         <div className="ad-spinner" />
-        <span>Đang tải Automation Dashboard...</span>
+        <span>Đang tải tổng quan tiến độ...</span>
       </section>
     );
   }
@@ -83,6 +83,7 @@ export default function AutomationDashboard({
   const formattedTime = new Date(
     data.generatedAt
   ).toLocaleString("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -94,26 +95,26 @@ export default function AutomationDashboard({
   return (
     <section
       className="ad-dashboard"
-      aria-label="Automation Dashboard"
+      aria-label="Tiến độ và nhắc hạn"
     >
       {/* Header */}
       <div className="ad-header">
         <div>
           <span className="ad-eyebrow">
-            CLOUD AUTOMATION / ANALYTICS
+            THEO DÕI TỰ ĐỘNG
           </span>
 
-          <h3>Automation Dashboard</h3>
+          <h3>Tiến độ và nhắc hạn</h3>
 
           <p>
-            Theo dõi deadline, tiến độ và cảnh báo
+            Theo dõi hạn hoàn thành, tiến độ và cảnh báo
             của dự án {data.project.name}.
           </p>
         </div>
 
         <div className="ad-live">
           <span className="ad-live-dot" />
-          Realtime
+          Cập nhật tự động
         </div>
       </div>
 
@@ -131,7 +132,7 @@ export default function AutomationDashboard({
           icon="📋"
           label="Tổng công việc"
           value={total}
-          subtitle="Task trong dự án"
+          subtitle="Công việc trong dự án"
           variant="blue"
         />
 
@@ -139,7 +140,7 @@ export default function AutomationDashboard({
           icon="🚨"
           label="Đã quá hạn"
           value={data.tasks.overdue}
-          subtitle="Task chưa hoàn thành"
+          subtitle="Công việc chưa hoàn thành"
           variant="red"
         />
 
@@ -160,110 +161,112 @@ export default function AutomationDashboard({
         />
       </div>
 
-      {/* Detailed statistics */}
-      <div className="ad-details-grid">
-        <div className="ad-panel">
-          <div className="ad-panel-heading">
-            <h4>Tiến độ công việc</h4>
-            <span>{completionRate}%</span>
-          </div>
+      <details className="ad-more">
+        <summary>Chi tiết tiến độ và thông báo</summary>
+        <div className="ad-details-grid">
+          <div className="ad-panel">
+            <div className="ad-panel-heading">
+              <h4>Tiến độ công việc</h4>
+              <span>{completionRate}%</span>
+            </div>
 
-          <div
-            className="ad-progress"
-            role="progressbar"
-            aria-label="Tỷ lệ hoàn thành Task"
-            aria-valuenow={completionRate}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
             <div
-              className="ad-progress-fill"
-              style={{
-                width: `${completionRate}%`,
-              }}
-            />
-          </div>
-
-          <div className="ad-detail-rows">
-            <div>
-              <span>Đã hoàn thành</span>
-              <strong>{completed}</strong>
-            </div>
-
-            <div>
-              <span>Chưa đến hạn</span>
-              <strong>{data.tasks.normal}</strong>
-            </div>
-
-            <div>
-              <span>Chưa đặt deadline</span>
-              <strong>
-                {data.tasks.withoutDeadline}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="ad-panel">
-          <div className="ad-panel-heading">
-            <h4>Thống kê thông báo</h4>
-            <span>🔔</span>
-          </div>
-
-          <div className="ad-detail-rows">
-            <div>
-              <span>Cảnh báo đã gửi</span>
-              <strong>{sent}</strong>
-            </div>
-
-            <div>
-              <span>Còn hiệu lực</span>
-              <strong className="ad-number-blue">
-                {activeAlerts}
-              </strong>
-            </div>
-
-            <div>
-              <span>Thông báo sắp hạn</span>
-              <strong>{data.alerts.upcoming}</strong>
-            </div>
-
-            <div>
-              <span>Thông báo quá hạn</span>
-              <strong>{data.alerts.overdue}</strong>
-            </div>
-          </div>
-
-          <div className="ad-alert-progress">
-            <div className="ad-alert-label">
-              <span>Tỷ lệ cảnh báo còn hiệu lực</span>
-              <strong>{activeAlertRate}%</strong>
-            </div>
-
-            <div className="ad-progress ad-progress-blue">
+              className="ad-progress"
+              role="progressbar"
+              aria-label="Tỷ lệ hoàn thành công việc"
+              aria-valuenow={completionRate}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
               <div
                 className="ad-progress-fill"
                 style={{
-                  width: `${activeAlertRate}%`,
+                  width: `${completionRate}%`,
                 }}
               />
             </div>
+
+            <div className="ad-detail-rows">
+              <div>
+                <span>Đã hoàn thành</span>
+                <strong>{completed}</strong>
+              </div>
+
+              <div>
+                <span>Chưa đến hạn</span>
+                <strong>{data.tasks.normal}</strong>
+              </div>
+
+              <div>
+                <span>Chưa có hạn hoàn thành</span>
+                <strong>
+                  {data.tasks.withoutDeadline}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="ad-panel">
+            <div className="ad-panel-heading">
+              <h4>Thống kê thông báo</h4>
+              <span>🔔</span>
+            </div>
+
+            <div className="ad-detail-rows">
+              <div>
+                <span>Cảnh báo đã gửi</span>
+                <strong>{sent}</strong>
+              </div>
+
+              <div>
+                <span>Còn hiệu lực</span>
+                <strong className="ad-number-blue">
+                  {activeAlerts}
+                </strong>
+              </div>
+
+              <div>
+                <span>Thông báo sắp hạn</span>
+                <strong>{data.alerts.upcoming}</strong>
+              </div>
+
+              <div>
+                <span>Thông báo quá hạn</span>
+                <strong>{data.alerts.overdue}</strong>
+              </div>
+            </div>
+
+            <div className="ad-alert-progress">
+              <div className="ad-alert-label">
+                <span>Tỷ lệ cảnh báo còn hiệu lực</span>
+                <strong>{activeAlertRate}%</strong>
+              </div>
+
+              <div className="ad-progress ad-progress-blue">
+                <div
+                  className="ad-progress-fill"
+                  style={{
+                    width: `${activeAlertRate}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="ad-footer">
-        <span>
-          <span className="ad-live-dot" />
-          Dữ liệu đồng bộ từ Convex Cloud
-        </span>
+        {/* Footer */}
+        <div className="ad-footer">
+          <span>
+            <span className="ad-live-dot" />
+            Dữ liệu được đồng bộ tự động
+          </span>
 
-        <span>
-          Cập nhật: {formattedTime}
-        </span>
-        <AutomationHistory/>
-      </div>
+          <span>
+            Cập nhật: {formattedTime}
+          </span>
+        </div>
+        <AutomationHistory />
+      </details>
     </section>
   );
 }

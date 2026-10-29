@@ -11,6 +11,7 @@ import AutomationDashboard from "./AutomationDashboard";
 
 
 import { useAction, useFeedback } from "../../components/Feedback";
+import { activityLabels, formatActivityDetail, formatDueDate, getErrorMessage } from "../../lib/uiText";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -84,7 +85,7 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
       notify(editingTask ? "Đã lưu thay đổi công việc." : "Đã tạo công việc.");
       setTitle(""); setDescription(""); setDueDate("");
       setAssigneeId(""); setPriority("medium"); setEditingTask(null); setShowModal(false);
-    } catch (e) { const message = e instanceof Error ? e.message : "Không thể lưu công việc."; setError(message); notify(message, "error"); }
+    } catch (e) { const message = getErrorMessage(e, "Không thể lưu công việc."); setError(message); notify(message, "error"); }
     finally { setBusy(false); }
   }
 
@@ -124,13 +125,13 @@ return (
       className="kb-back"
       onClick={onBack}
     >
-      ← Trở về Workspace
+      ← Trở về danh sách dự án
     </button>
 
     <header className="kb-header">
       <div className="kb-header-info">
         <p className="kb-caption">
-          CLOUDTASK PRO / PROJECT KANBAN
+          DỰ ÁN / BẢNG CÔNG VIỆC
         </p>
 
         <h2>{project.name}</h2>
@@ -158,10 +159,10 @@ return (
     <AutomationDashboard projectId={project._id} />
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
-    <input className="kb-search" aria-label="Tìm Task" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
-    <div className="kb-toolbar"><span>Kéo thả để đổi trạng thái hoặc sắp xếp • Có thể dùng dropdown thay thế</span>
+    <input className="kb-search" aria-label="Tìm công việc" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
+    <div className="kb-toolbar"><span>Kéo thả để sắp xếp hoặc chọn trạng thái trên thẻ công việc.</span>
       <button type="button" onClick={() => setShowHistory(v => !v)}>{showHistory ? "Ẩn lịch sử" : "Xem lịch sử"}</button></div>
-    <div className="kb-columns" role="region" aria-label="Bảng Kanban, cuộn ngang để xem các cột" tabIndex={0}>
+    <div className="kb-columns" role="region" aria-label="Bảng công việc, cuộn ngang để xem các cột" tabIndex={0}>
       {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}
         onDragOver={e => {if (dragId) e.preventDefault();}}
         onDrop={e => { e.preventDefault(); void dropTask(lane.key); }}>
@@ -177,7 +178,7 @@ return (
               {isManager && active && <button className="ui-button ui-danger ui-icon" disabled={pending!==null} aria-busy={pending===`delete:${task._id}`} type="button" onClick={() => void deleteTask(task)} aria-label={`Xóa ${task.title}`}>×</button>}</div>
             <h3>{task.title}</h3>
             {canChange(task, task.status) && <button type="button" className="kb-edit ui-button ui-secondary" disabled={pending!==null} onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
-            <div className="kb-details">{task.dueDate && <span>Hạn: {task.dueDate}</span>}
+            <div className="kb-details">{task.dueDate && <span>Hạn: {formatDueDate(task.dueDate)}</span>}
               <span>{task.assigneeId ? `Phụ trách: ${task.assigneeId === user?.id ? "Tôi" : task.assigneeId.slice(-8)}` : "Chưa phân công"}</span></div>
               <label>
                 Trạng thái
@@ -215,7 +216,7 @@ return (
     </div>
     {showHistory && <section className="kb-history"><h3>Lịch sử công việc</h3>
       {activities === undefined ? <p>Đang tải...</p> : activities.length === 0 ? <p>Chưa có thay đổi nào.</p> :
-        <ul>{activities.map(a => <li key={a._id}><strong>{a.type}</strong> — {a.detail}
+        <ul>{activities.map(a => <li key={a._id}><strong>{activityLabels[a.type]}</strong> — {formatActivityDetail(a.type, a.detail)}
           <small> • {new Date(a.createdAt).toLocaleString("vi-VN")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
     </section>}
     {showModal && <div className="kb-overlay" onMouseDown={e => { if(e.target === e.currentTarget && !busy) setShowModal(false); }}>

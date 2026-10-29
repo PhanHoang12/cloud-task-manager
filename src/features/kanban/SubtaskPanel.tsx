@@ -38,9 +38,9 @@ export default function SubtaskPanel({ taskId, editable }: {
     await run(() => remove({ subtaskId }), "Đã xóa công việc con.", "Không thể xóa công việc con.", `delete:${subtaskId}`);
   }
   return <section className="st-panel">
-    <div className="st-heading"><strong>Checklist công việc con</strong><span>{done}/{count} • {percent}%</span></div>
+    <div className="st-heading"><strong>Công việc con</strong><span>{done}/{count} • {percent}%</span></div>
     <div className="st-bar" role="progressbar" aria-label="Tiến độ công việc con" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}><div style={{ width: `${percent}%` }} /></div>
-    {subtasks === undefined ? <p role="status">Đang tải checklist...</p> : count === 0 ? <p className="st-muted">Chưa có công việc con.</p> :
+    {subtasks === undefined ? <p role="status">Đang tải công việc con...</p> : count === 0 ? <p className="st-muted">Chưa có công việc con.</p> :
       <ul className="st-list">{subtasks.map(s => <li key={s._id} aria-busy={pending===s._id || pending===`delete:${s._id}`}>
         {editingId===s._id && editable ? <form className="st-edit-form" onSubmit={event => void edit(event, s._id)}>
           <input autoFocus aria-label="Sửa tên công việc con" required minLength={2} maxLength={160} value={draft} disabled={pending!==null} onChange={event => setDraft(event.target.value)} />
@@ -53,7 +53,7 @@ export default function SubtaskPanel({ taskId, editable }: {
           {editable && <span className="st-tools"><button className="ui-button ui-secondary" type="button" disabled={pending!==null} onClick={() => {setEditingId(s._id); setDraft(s.title);}}>Sửa</button><button className="ui-button ui-danger" type="button" disabled={pending!==null} aria-busy={pending===`delete:${s._id}`} onClick={() => void erase(s._id, s.title)}>Xóa</button></span>}
         </>}
       </li>)}</ul>}
-    {pending && <span className="ui-inline-busy" role="status">Đang xử lý checklist...</span>}
+    {pending && <span className="ui-inline-busy" role="status">Đang cập nhật công việc con...</span>}
     {editable && <form className="st-add" onSubmit={event => void add(event)}><input aria-label="Tên công việc con" placeholder="Thêm công việc con..." minLength={2} maxLength={160} required disabled={pending!==null} value={title} onChange={event => setTitle(event.target.value)} /><button className="ui-button ui-primary" type="submit" aria-busy={pending==="create"} disabled={pending!==null || title.trim().length < 2}>{pending==="create" ? "Đang lưu..." : "+ Thêm"}</button></form>}
   </section>;
 }

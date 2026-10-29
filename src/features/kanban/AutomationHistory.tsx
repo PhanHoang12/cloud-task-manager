@@ -34,7 +34,7 @@ function formatDuration(
     return `${milliseconds} ms`;
   }
 
-  return `${(milliseconds / 1000).toFixed(2)} s`;
+  return `${(milliseconds / 1000).toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} s`;
 }
 
 function StatusBadge({
@@ -62,23 +62,11 @@ export default function AutomationHistory() {
   );
 
   if (result === undefined) {
-    return (
-      <section className="ah-card">
-        <p>Đang tải lịch sử Automation...</p>
-      </section>
-    );
+    return null;
   }
 
   if (!result.authorized) {
-    return (
-      <section className="ah-card">
-        <h3>Lịch sử chạy Automation</h3>
-        <p className="ah-muted">
-          Chỉ tài khoản quản trị Automation
-          được phép xem lịch sử Cron toàn hệ thống.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   const runs = result.runs;
@@ -87,24 +75,24 @@ export default function AutomationHistory() {
   return (
     <section
       className="ah-card"
-      aria-label="Lịch sử chạy Automation"
+      aria-label="Lịch sử nhắc hạn tự động"
     >
       <div className="ah-header">
         <div>
           <span className="ah-eyebrow">
-            AUTOMATION / EXECUTION HISTORY
+            TỰ ĐỘNG HÓA / LỊCH SỬ THỰC HIỆN
           </span>
 
-          <h3>Lịch sử chạy Automation</h3>
+          <h3>Lịch sử nhắc hạn tự động</h3>
 
           <p className="ah-muted">
-            Theo dõi 20 lượt quét deadline gần nhất
-            trên Convex Cloud.
+            Theo dõi 20 lượt kiểm tra hạn hoàn thành gần nhất
+            trong toàn hệ thống.
           </p>
         </div>
 
         <span className="ah-realtime">
-          ● Realtime
+          ● Cập nhật tự động
         </span>
       </div>
 
@@ -122,7 +110,7 @@ export default function AutomationHistory() {
             <strong>
               {latest.source === "manual"
                 ? "Thủ công"
-                : "Cron tự động"}
+                : "Theo lịch"}
             </strong>
           </div>
 
@@ -132,7 +120,7 @@ export default function AutomationHistory() {
           </div>
 
           <div>
-            <span>Task đã quét</span>
+            <span>Công việc đã kiểm tra</span>
             <strong>{latest.tasksScanned}</strong>
           </div>
         </div>
@@ -140,13 +128,13 @@ export default function AutomationHistory() {
 
       {runs.length === 0 ? (
         <p className="ah-empty">
-          Chưa có lịch sử chạy Automation.
+          Chưa có lịch sử nhắc hạn tự động.
         </p>
       ) : (
         <div
           className="ah-table-wrap"
           tabIndex={0}
-          aria-label="Bảng lịch sử chạy Cron"
+          aria-label="Bảng lịch sử nhắc hạn tự động"
         >
           <table className="ah-table">
             <thead>
@@ -155,7 +143,7 @@ export default function AutomationHistory() {
                 <th>Nguồn</th>
                 <th>Trạng thái</th>
                 <th>Trang</th>
-                <th>Task quét</th>
+                <th>Công việc đã kiểm tra</th>
                 <th>Quá hạn</th>
                 <th>Cảnh báo mới</th>
                 <th>Thời lượng</th>
@@ -169,8 +157,8 @@ export default function AutomationHistory() {
 
                   <td>
                     {run.source === "manual"
-                      ? "Manual"
-                      : "Scheduled"}
+                      ? "Thủ công"
+                      : "Theo lịch"}
                   </td>
 
                   <td>
@@ -209,11 +197,8 @@ export default function AutomationHistory() {
       )}
 
       <p className="ah-footnote">
-        Lịch sử này áp dụng cho toàn hệ thống,
-        không chỉ Project đang mở. Trạng thái
-        "Đang chạy" có thể kéo dài nếu worker bị lỗi;
-        chức năng tự động phát hiện lượt chạy thất bại
-        sẽ được bổ sung riêng.
+        Lịch sử dành cho quản trị viên, áp dụng cho toàn hệ thống.
+        Thời gian hiển thị theo múi giờ Việt Nam.
       </p>
     </section>
   );

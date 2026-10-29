@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, AlertCircle, X, Trash2 } from "lucide-react";
+import { getErrorMessage } from "../lib/uiText";
 
 type Notice = { id: number; message: string; kind: "success" | "error" };
 type Confirmation = { title: string; description: string; confirmLabel?: string };
@@ -101,7 +102,7 @@ export function useAction() {
       notify(success);
       return true;
     } catch (error) {
-      notify(error instanceof Error ? error.message : fallback, "error");
+      notify(getErrorMessage(error, fallback), "error");
       return false;
     } finally {
       locked.current = false;

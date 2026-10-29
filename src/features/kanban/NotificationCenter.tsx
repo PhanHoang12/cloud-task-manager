@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import "./collaboration.css";
+import { getErrorMessage } from "../../lib/uiText";
 
 const PANEL_WIDTH = 380;
 const VIEWPORT_GAP = 12;
@@ -121,7 +122,7 @@ export default function NotificationCenter() {
       setError("");
       await markRead({ notificationId });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể đánh dấu thông báo đã đọc.");
+      setError(getErrorMessage(err, "Không thể đánh dấu thông báo đã đọc."));
     }
   }
 

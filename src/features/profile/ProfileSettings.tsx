@@ -52,7 +52,7 @@ export default function ProfileSettings() {
         throw new Error("Ảnh phải có dung lượng từ 1 byte đến 2 MB.");
       }
       const token = await getToken();
-      if (!token) throw new Error("Không lấy được phiên xác thực Clerk.");
+      if (!token) throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
       const convexUrl = import.meta.env.VITE_CONVEX_URL?.trim();
       if (!convexUrl || !/^https:\/\/[^/]+\.convex\.cloud\/?$/.test(convexUrl)) {
         throw new Error("Không tìm thấy địa chỉ kết nối dữ liệu hợp lệ.");
@@ -88,7 +88,7 @@ export default function ProfileSettings() {
           <p className="profile-overline">CÀI ĐẶT TÀI KHOẢN</p>
           <h1>Hồ sơ cá nhân</h1>
           <p className="profile-muted">
-            Cập nhật thông tin cá nhân để giao diện hệ thống chuyên nghiệp và đầy đủ hơn.
+            Cập nhật ảnh đại diện và thông tin để các thành viên dễ nhận ra bạn.
           </p>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function ProfileSettings() {
         <section className="profile-card profile-side">
           <div className="profile-avatar-wrap">
             {avatarUrl ? (
-              <img className="profile-avatar" src={avatarUrl} alt="Avatar" />
+              <img className="profile-avatar" src={avatarUrl} alt="Ảnh đại diện" />
             ) : (
               <div className="profile-avatar profile-avatar-fallback">
                 {fullName?.slice(0, 1).toUpperCase() || "U"}
@@ -106,7 +106,7 @@ export default function ProfileSettings() {
           </div>
 
           <h2>{fullName || "Người dùng"}</h2>
-          <p className="profile-email">{data.clerk.email || "Chưa có email"}</p>
+          <p className="profile-email">{data.clerk.email || "Chưa có địa chỉ thư điện tử"}</p>
 
           <div className="profile-actions">
             <button type="button" className="ui-button ui-primary" disabled={pending!==null} aria-busy={pending==="upload"} onClick={() => avatarInput.current?.click()}>
@@ -124,7 +124,7 @@ export default function ProfileSettings() {
             <fieldset className="profile-fields" disabled={pending!==null}>
             <div className="profile-section-title">
               <h2>Thông tin cá nhân</h2>
-              <p>Điền đầy đủ thông tin để hồ sơ rõ ràng hơn khi demo sản phẩm.</p>
+              <p>Thông tin giúp các thành viên nhận diện và liên hệ với bạn.</p>
             </div>
 
             <div className="profile-form-grid">
@@ -161,7 +161,7 @@ export default function ProfileSettings() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 maxLength={500}
-                placeholder="Ví dụ: Sinh viên CNTT, quan tâm đến Cloud Computing, Automation và Full-stack Development..."
+                placeholder="Ví dụ: Sinh viên công nghệ thông tin, quan tâm đến điện toán đám mây và phát triển ứng dụng..."
               />
             </label>
 
