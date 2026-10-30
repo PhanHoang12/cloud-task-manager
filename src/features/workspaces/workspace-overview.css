@@ -59,3 +59,39 @@ button.wo-metric:hover, button.wo-metric.is-selected { border-color: var(--wo-to
 @media (max-width: 1050px) { .wo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 610px) { .wo-metrics { gap: 10px; } .wo-metric { padding: 15px 12px; gap: 8px; } .wo-metric-icon { width: 32px; height: 32px; border-radius: 10px; } .wo-metric-icon svg { width: 17px; height: 17px; } .wo-metric-label { font-size: 11px; } .wo-metric > strong { font-size: 29px; } .wo-metric > small { font-size: 10px; } .wo-chart-card { padding: 20px 16px; } .wo-donut-layout { flex-direction: column; gap: 0; } .wo-donut-wrap { flex: 0 0 auto; width: 200px; } .wo-legend { flex: 0 0 auto; width: 100%; } .wo-chart-note { margin-top: 12px; } .wo-bar-column { padding: 0 2px; } .wo-bars { gap: 5px; } .wo-bars-chart { gap: 8px; } .ws-filter-summary { margin: 14px 16px 0; } }
 @media (prefers-reduced-motion: reduce) { .wo-metric, .wo-donut-segment, .wo-bar-stack, .wo-bar-segment { transition: none; } }
+
+
+/* M9: a compact working summary; detailed analytics follow the project list. */
+.wo-summary { margin: 16px 26px 0; }
+.wo-summary .wo-metrics { gap: 8px; margin: 0; }
+.wo-summary .wo-metric { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 12px; border-radius: 12px; box-shadow: none; background: #fff; }
+.wo-summary .wo-metric-icon { display: none; }
+.wo-summary .wo-metric-label { font-size: 12px; }
+.wo-summary .wo-metric > strong { color: var(--wo-ink); grid-column: 2; grid-row: 1; font-size: 22px; align-self: center; }
+.wo-summary .wo-metric > small { margin: 0; font-size: 11px; color: var(--text-secondary); }
+.wo-summary .wo-metric[aria-pressed="true"] { border-color: var(--action-primary); background: #eef2ff; }
+.wo-summary .wo-metric:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.wo-analytics { margin: 20px 0 24px; border: 1px solid #e7ebf3; border-radius: 14px; background: white; }
+.wo-analytics > summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; padding: 16px 20px; cursor: pointer; color: var(--wo-ink); list-style: none; }
+.wo-analytics > summary::-webkit-details-marker { display: none; }
+.wo-analytics > summary > span { display: grid; gap: 4px; }
+.wo-analytics > summary strong { font-size: 15px; }
+.wo-analytics-hint { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.wo-analytics > summary > svg { flex-shrink: 0; }
+.wo-analytics[open] > summary > svg { transform: rotate(180deg); }
+.wo-analytics > summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; border-radius: 14px; }
+.wo-analytics > section { padding: 0 16px 16px; }
+.wo-analytics .wo-chart-card { padding: 16px; border-radius: 12px; box-shadow: none; }
+.wo-analytics .wo-scope { color: var(--text-secondary); }
+@media (max-width: 1050px) { .wo-summary .wo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 610px) {
+  .wo-summary { margin: 16px 16px 0; }
+  .wo-summary .wo-metric { padding: 10px; }
+  .wo-summary .wo-metric > strong { font-size: 20px; }
+  .wo-analytics > summary { padding: 16px; }
+  .wo-analytics > section { padding: 0 8px 12px; }
+}
+
+@media (max-width: 610px) {
+  .wo-summary .wo-metric > small { display: none; }
+}

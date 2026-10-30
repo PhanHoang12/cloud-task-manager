@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/react";
 import { api } from "../../../convex/_generated/api";
@@ -6,14 +6,17 @@ import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import "./kanban.css";
 import SubtaskPanel from "./SubtaskPanel";
 import TaskComments from "./TaskComments";
-import NotificationCenter from "./NotificationCenter";
 import AutomationDashboard from "./AutomationDashboard";
 
 
 import { useAction, useFeedback } from "../../components/Feedback";
 import ModalDialog from "../../components/ModalDialog";
+import { useDraftGuard, useViewState } from "../../components/NavigationExperience";
 import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 import { activityLabels, formatActivityDetail, formatDueDate, getErrorMessage } from "../../lib/uiText";
+import { buildAssigneeLabels, getAssigneeLabel } from "../../lib/assignees";
+import { buildCommentAuthorNames } from "../../lib/commentAuthors";
+import type { NotificationNavigation } from "../../lib/notificationNavigation";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -29,17 +32,33 @@ const priorityLabel: Record<Priority, string> = {
   low: "Thấp", medium: "Trung bình", high: "Cao", urgent: "Khẩn cấp",
 };
 
-export default function KanbanBoard({ project, workspaceId, role, onBack }: {
+export default function KanbanBoard({ project, workspaceId, role, onBack, notificationNavigation }: {
   project: Doc<"projects">;
   workspaceId: Id<"workspaces">;
   role: Role;
   onBack: () => void;
+  notificationNavigation?: NotificationNavigation;
 }) {
   const { user } = useUser();
+  const linkedTaskRef = useRef<HTMLElement>(null);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const [deadlineNoticeTarget, setDeadlineNoticeTarget] = useState<HTMLDivElement | null>(null);
+  const linkedHeadingRef = useRef<HTMLHeadingElement>(null);
+  const unavailableRef = useRef<HTMLDivElement>(null);
+  const handledNavigation = useRef<number | null>(null);
+  const [unavailableRequest, setUnavailableRequest] = useState<number | null>(null);
+  const linkedTaskUnavailable = notificationNavigation !== undefined && unavailableRequest === notificationNavigation.requestId;
   const { notify, confirm } = useFeedback();
   const { run, pending } = useAction();
   const tasks = useQuery(api.projectTasks.list, { projectId: project._id });
-  const members = useQuery(api.workspaces.listMembers, { workspaceId });
+  const members = useQuery(api.members.list, { workspaceId });
+  const viewerProfile = useQuery(api.profiles.me);
+  const commentAuthorNames = useMemo(() => buildCommentAuthorNames(members, viewerProfile ? {
+    id: viewerProfile.clerk.id,
+    profile: viewerProfile.profile ? { fullName: viewerProfile.profile.fullName, accountName: viewerProfile.profile.accountName } : null,
+  } : undefined), [members, viewerProfile]);
+  const assigneeLabels = useMemo(() => buildAssigneeLabels(members ?? [], { id: user?.id, fullName: user?.fullName }), [members, user?.id, user?.fullName]);
+  const assigneeLabel = (id?: string) => getAssigneeLabel(id, assigneeLabels, members !== undefined, { id: user?.id, fullName: user?.fullName });
   const create = useMutation(api.projectTasks.create);
   const setStatus = useMutation(api.projectTasks.setStatus);
   const remove = useMutation(api.projectTasks.remove);
@@ -55,15 +74,45 @@ export default function KanbanBoard({ project, workspaceId, role, onBack }: {
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useViewState("project:" + project._id + ":search", "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const formSnapshot = { title, description, priority, dueDate, assigneeId };
+  const baseline = editingTask ? { title: editingTask.title, description: editingTask.description, priority: editingTask.priority, dueDate: editingTask.dueDate ?? "", assigneeId: editingTask.assigneeId ?? "" } : { title: "", description: "", priority: "medium", dueDate: "", assigneeId: "" };
+  const dismissDraft = useDraftGuard(showModal && JSON.stringify(formSnapshot) !== JSON.stringify(baseline), busy || pending !== null);
+  const closeTask = () => dismissDraft(() => setShowModal(false));
+  const previousNotification = useRef(notificationNavigation?.requestId);
+  useEffect(() => {
+    if (previousNotification.current === notificationNavigation?.requestId) return;
+    previousNotification.current = notificationNavigation?.requestId;
+    setShowModal(false);
+  }, [notificationNavigation?.requestId]);
   const isManager = role === "owner" || role === "admin";
   const active = project.status === "active";
   const canCreate = active && role !== "viewer";
   const visible = useMemo(() => (tasks ?? [])
     .filter(t => `${t.title} ${t.description}`.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => a.position - b.position), [tasks, search]);
+
+  useEffect(() => {
+    if (!notificationNavigation || handledNavigation.current === notificationNavigation.requestId ||
+      (notificationNavigation.taskId && tasks === undefined)) return;
+    if (notificationNavigation.taskId && !tasks?.some(task => task._id === notificationNavigation.taskId)) {
+      handledNavigation.current = notificationNavigation.requestId;
+      setUnavailableRequest(notificationNavigation.requestId);
+      return;
+    }
+    if (search) { setSearch(""); return; }
+    const element = notificationNavigation.taskId ? linkedTaskRef.current : linkedHeadingRef.current;
+    if (element) {
+      handledNavigation.current = notificationNavigation.requestId;
+      element.scrollIntoView({ block: "center", inline: "center" });
+      element.focus({ preventScroll: true });
+    }
+  }, [notificationNavigation, tasks, search]);
+  useEffect(() => {
+    if (linkedTaskUnavailable) unavailableRef.current?.focus();
+  }, [linkedTaskUnavailable]);
 
   const canChange = (task: Task, target: Status) => {
     if (!active || role === "viewer") return false;
@@ -136,7 +185,7 @@ return (
           DỰ ÁN / BẢNG CÔNG VIỆC
         </p>
 
-        <h2>{project.name}</h2>
+        <h2 ref={linkedHeadingRef} tabIndex={notificationNavigation ? -1 : undefined} className={notificationNavigation ? "kb-notification-heading" : undefined}>{project.name}</h2>
 
         <p>
           {project.description ||
@@ -145,7 +194,6 @@ return (
       </div>
 
       <div className="kb-header-actions">
-        <ScreenErrorBoundary scope="Thông báo" resetKey={project._id} compact><NotificationCenter /></ScreenErrorBoundary>
 
         {canCreate && (
           <button
@@ -158,19 +206,26 @@ return (
         )}
       </div>
     </header>
-    <ScreenErrorBoundary scope="Tiến độ và nhắc hạn" resetKey={project._id}><AutomationDashboard projectId={project._id} /></ScreenErrorBoundary>
+    <div className="kb-deadline-notices" ref={setDeadlineNoticeTarget} />
+    {linkedTaskUnavailable && <div ref={unavailableRef} tabIndex={-1} className="kb-warning" role="alert">Không tìm thấy công việc được liên kết trong danh sách hiện có. Bạn có thể xem các công việc khác của dự án.</div>}
     {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
     <input className="kb-search" aria-label="Tìm công việc" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
     <div className="kb-toolbar"><span>Kéo thả để sắp xếp hoặc chọn trạng thái trên thẻ công việc.</span>
       <button type="button" onClick={() => setShowHistory(v => !v)}>{showHistory ? "Ẩn lịch sử" : "Xem lịch sử"}</button></div>
-    <div className="kb-columns" role="region" aria-label="Bảng công việc, cuộn ngang để xem các cột" tabIndex={0}>
+    {tasks === undefined && <p className="kb-muted" role="status">Đang tải công việc của dự án...</p>}
+    <div ref={columnsRef} className="kb-columns" aria-busy={tasks === undefined} role="region" aria-label="Bảng công việc, cuộn ngang để xem các cột" tabIndex={0}>
       {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}
         onDragOver={e => {if (dragId) e.preventDefault();}}
         onDrop={e => { e.preventDefault(); void dropTask(lane.key); }}>
-        <div className="kb-column-title"><strong>{lane.title}</strong><span>{visible.filter(t => t.status === lane.key).length}</span></div>
-        {tasks === undefined ? <p className="kb-muted">Đang tải...</p> :
-          visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id} aria-busy={pending===`move:${task._id}` || pending===`delete:${task._id}`}
+        <div className="kb-column-title"><strong>{lane.title}</strong><span>{tasks === undefined ? "…" : visible.filter(t => t.status === lane.key).length}</span></div>
+        {tasks === undefined ? <p className="kb-muted" aria-hidden="true">Đang tải...</p> :
+          visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id}
+            ref={task._id === notificationNavigation?.taskId ? linkedTaskRef : undefined}
+            tabIndex={task._id === notificationNavigation?.taskId ? -1 : undefined}
+            data-notification-target={task._id === notificationNavigation?.taskId ? "true" : undefined}
+            aria-label={task._id === notificationNavigation?.taskId ? `Công việc: ${task.title}` : undefined}
+            aria-busy={pending===`move:${task._id}` || pending===`delete:${task._id}`}
             draggable={!pending && canChange(task, task.status)}
             onDragStart={e => {e.dataTransfer.effectAllowed = "move"; setDragId(task._id);}}
             onDragEnd={() => setDragId(null)}
@@ -181,7 +236,7 @@ return (
             <h3>{task.title}</h3>
             {canChange(task, task.status) && <button type="button" className="kb-edit ui-button ui-secondary" disabled={pending!==null} onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
             <div className="kb-details">{task.dueDate && <span>Hạn: {formatDueDate(task.dueDate)}</span>}
-              <span>{task.assigneeId ? `Phụ trách: ${task.assigneeId === user?.id ? "Tôi" : task.assigneeId.slice(-8)}` : "Chưa phân công"}</span></div>
+              <span>{task.assigneeId ? `Phụ trách: ${assigneeLabel(task.assigneeId)}` : "Chưa phân công"}</span></div>
               <label>
                 Trạng thái
                 <select
@@ -206,11 +261,13 @@ return (
             {/* Module 04.4 — Subtasks & Progress Tracking */}
             <ScreenErrorBoundary scope="Công việc con" resetKey={task._id} compact>
             <SubtaskPanel
+              compact
               taskId={task._id}
               editable={canChange(task, task.status)}/>
             </ScreenErrorBoundary>
             <ScreenErrorBoundary scope="Thảo luận" resetKey={task._id} compact>
               <TaskComments
+            authorNames={commentAuthorNames}
             taskId={task._id}
             canComment={active && role !== "viewer"}
             canModerate={isManager}/>
@@ -220,25 +277,31 @@ return (
         {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">Chưa có công việc</p>}
       </section>)}
     </div>
+    <ScreenErrorBoundary scope="Tiến độ và nhắc hạn" resetKey={project._id}>
+      <AutomationDashboard projectId={project._id} noticeTarget={deadlineNoticeTarget}
+        onReviewTasks={() => { setSearch(""); columnsRef.current?.focus(); columnsRef.current?.scrollIntoView({ block: "nearest" }); }} />
+    </ScreenErrorBoundary>
     {showHistory && <section className="kb-history"><h3>Lịch sử công việc</h3>
-      {activities === undefined ? <p>Đang tải...</p> : activities.length === 0 ? <p>Chưa có thay đổi nào.</p> :
+      {activities === undefined ? <p role="status">Đang tải lịch sử công việc...</p> : activities.length === 0 ? <p>Chưa có thay đổi nào.</p> :
         <ul>{activities.map(a => <li key={a._id}><strong>{activityLabels[a.type]}</strong> — {formatActivityDetail(a.type, a.detail)}
           <small> • {new Date(a.createdAt).toLocaleString("vi-VN")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
     </section>}
-    {showModal && <ModalDialog className="kb-overlay" label={editingTask ? "Chỉnh sửa công việc" : "Tạo công việc"} busy={busy} onDismiss={() => setShowModal(false)}>
+    {showModal && <ModalDialog className="kb-overlay" label={editingTask ? "Chỉnh sửa công việc" : "Tạo công việc"} busy={busy} onDismiss={closeTask}>
       <form className="kb-dialog" onSubmit={e => void submit(e)}>
-        <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button className="ui-button ui-secondary ui-icon" aria-label="Đóng" type="button" onClick={() => setShowModal(false)} disabled={busy}>×</button></div>
+        <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button className="ui-button ui-secondary ui-icon" aria-label="Đóng" type="button" onClick={closeTask} disabled={busy}>×</button></div>
         <label>Tiêu đề *<input disabled={busy} required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
         <label>Mô tả<textarea disabled={busy} rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
         <div className="kb-form-row"><label>Ưu tiên<select disabled={busy} value={priority} onChange={e => setPriority(e.target.value as Priority)}>
           {Object.entries(priorityLabel).map(([k,v]) => <option key={k} value={k}>{v}</option>)}</select></label>
           <label>Hạn hoàn thành<input disabled={busy} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></label></div>
-        <label>Người phụ trách<select disabled={busy || (!!editingTask && !isManager)} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+        <label>Người phụ trách<select aria-busy={members === undefined} disabled={busy || (!!editingTask && !isManager)} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
           <option value="">Chưa phân công</option>
-          {members?.filter(m => m.role !== "viewer").map(m => <option key={m._id} value={m.userId}>{m.userId === user?.id ? "Tôi" : m.userId}</option>)}
-        </select></label>
+          {assigneeId && !members?.some(m => m.userId === assigneeId && m.role !== "viewer") &&
+            <option value={assigneeId} disabled>{assigneeLabel(assigneeId)} · Không thể chọn mới</option>}
+          {members?.filter(m => m.role !== "viewer").map(m => <option key={m._id} value={m.userId}>{assigneeLabel(m.userId)}</option>)}
+        </select>{members === undefined && <span role="status">Đang tải danh sách thành viên…</span>}</label>
         {error && <p role="alert" className="kb-error">{error}</p>}
-        <div className="kb-actions"><button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setShowModal(false)}>Hủy</button>
+        <div className="kb-actions"><button className="ui-button ui-secondary" type="button" disabled={busy} onClick={closeTask}>Hủy</button>
           <button className="ui-button ui-primary" aria-busy={busy} type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
       </form>
     </ModalDialog>}

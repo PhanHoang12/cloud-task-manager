@@ -1,12 +1,12 @@
 .ui-error-state {
-  min-width: 0; margin: 24px; padding: 24px;
-  border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #17243e;
+  min-width: 0; margin: var(--space-section); padding: var(--space-section);
+  --card-radius: var(--radius-compact);
   overflow-wrap: anywhere;
 }
 .ui-error-state h2 { margin: 0 0 12px; font-size: 20px; line-height: 1.4; }
-.ui-error-state p { margin: 8px 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+.ui-error-state p { margin: 8px 0; color: var(--text-secondary); font-size: var(--font-size-body); line-height: var(--line-height-body); }
 .ui-error-state .ui-error-scope { font-weight: 600; }
-.ui-error-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.ui-error-actions { display: flex; flex-wrap: wrap; gap: var(--space-tight); margin-top: 18px; }
 .ui-error-state:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .ui-error-state-compact { margin: 0; padding: 12px; max-width: 320px; }
 .ui-error-state-compact h2 { font-size: 16px; }

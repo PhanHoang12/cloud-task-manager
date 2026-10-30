@@ -381,3 +381,21 @@
 .ad-eyebrow { letter-spacing: .7px; line-height: 1.6; }
 .ad-header > div:first-child { min-width: 0; overflow-wrap: anywhere; }
 .ad-footer { flex-wrap: wrap; }
+
+/* M9: secondary analytics stay available below the lanes. */
+.ad-dashboard { padding: 0; border-radius: 14px; box-shadow: none; margin: 16px 0 24px; }
+.ad-overview > summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 60px; padding: 16px; list-style: none; cursor: pointer; font-size: 15px; font-weight: 700; }
+.ad-overview > summary::-webkit-details-marker { display: none; }
+.ad-overview > summary > svg { flex-shrink: 0; }
+.ad-overview[open] > summary > svg { transform: rotate(180deg); }
+.ad-overview > summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; border-radius: 14px; }
+.ad-overview > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.ad-overview > .ad-more { margin-bottom: 16px; }
+.ad-header { margin-bottom: 16px; }
+.ad-header h3 { font-size: 20px; }
+.ad-header p { color: var(--text-secondary); }
+.ad-loading { min-height: 60px; padding: 16px; }
+.ad-deadline-notice { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #f6d59a; border-radius: 12px; background: #fffaeb; color: #935e10; font-size: 13px; line-height: 1.5; }
+.ad-deadline-notice > div { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.ad-deadline-notice > button { flex-shrink: 0; }
+@media (max-width: 760px) { .ad-header { flex-wrap: wrap; } .ad-stat { padding: 12px; } }

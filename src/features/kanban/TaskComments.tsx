@@ -13,9 +13,12 @@ import {
 } from "lucide-react";
 import "./collaboration.css";
 
+import { getCommentAuthorName } from "../../lib/commentAuthors";
+import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAction, useFeedback } from "../../components/Feedback";
 
 type Props = {
+  authorNames: ReadonlyMap<string, string> | undefined;
   taskId: Id<"projectTasks">;
   canComment: boolean;
   canModerate: boolean;
@@ -31,6 +34,7 @@ function formatDate(timestamp: number) {
 }
 
 export default function TaskComments({
+  authorNames,
   taskId,
   canComment,
   canModerate,
@@ -45,6 +49,7 @@ export default function TaskComments({
   const [text, setText] = useState("");
   const { run, pending } = useAction();
   const { confirm } = useFeedback();
+  const dismissDraft = useDraftGuard(canComment && text !== "", pending !== null);
   const busy = pending === "create";
   const deletingId = pending === "create" ? null : pending;
 
@@ -66,7 +71,7 @@ export default function TaskComments({
         type="button"
         className="tc-toggle"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={() => { if (open) dismissDraft(() => { setText(""); setOpen(false); }); else setOpen(true); }}
       >
         <span className="tc-toggle-left">
           <MessageCircle size={17} />
@@ -86,7 +91,7 @@ export default function TaskComments({
         <div className="tc-content">
           <div className="tc-list">
             {comments === undefined ? (
-              <p className="tc-empty">Đang tải bình luận...</p>
+              <p className="tc-empty" role="status">Đang tải bình luận...</p>
             ) : comments.length === 0 ? (
               <div className="tc-empty">
                 <MessageCircle size={24} />
@@ -97,11 +102,8 @@ export default function TaskComments({
               comments.map((comment) => {
                 const mine = comment.authorId === user?.id;
 
-                const authorName = mine
-                  ? (user?.firstName ||
-                     user?.fullName ||
-                     "Tôi")
-                  : `Thành viên ${comment.authorId.slice(-4)}`;
+                const authorName = getCommentAuthorName(comment.authorId, authorNames);
+                const authorInitial = authorNames?.get(comment.authorId)?.slice(0, 1).toLocaleUpperCase("vi-VN");
 
                 const canDelete = canModerate || mine;
 
@@ -115,8 +117,8 @@ export default function TaskComments({
                         mine ? "mine" : "other"
                       }`}
                     >
-                      {mine && user?.firstName ? (
-                        user.firstName.charAt(0).toUpperCase()
+                      {authorInitial ? (
+                        authorInitial
                       ) : (
                         <UserRound size={16} />
                       )}

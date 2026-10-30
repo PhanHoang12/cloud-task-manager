@@ -74,7 +74,7 @@ export default function ModalDialog({ children, className, label, busy, onDismis
 
   return <dialog
     ref={dialog}
-    className={`ui-modal ${className}`}
+    className={`ui-modal ui-form ${className}`}
     aria-label={label}
     aria-modal="true"
     onKeyDown={trapTab}

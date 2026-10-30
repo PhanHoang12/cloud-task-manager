@@ -19,3 +19,28 @@
   .kb-header { align-items: stretch; flex-direction: column; }
   .kb-header-actions { flex-wrap: wrap; }
 }
+
+/* A notification destination is focusable without adding it to normal Tab order. */
+.kb-card[data-notification-target]:focus, .kb-notification-heading:focus { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+
+/* M9: the project and working board lead; analytics follow in DOM order. */
+.kb-page { padding: 24px 4%; }
+.kb-back { padding: 4px 0 12px; }
+.kb-header { margin-bottom: 16px; gap: 16px; }
+.kb-caption { margin: 0 0 6px; }
+.kb-header h2 { margin: 0 0 8px; font-size: 28px; line-height: 1.25; }
+.kb-header-info > p:last-child { margin: 0; font-size: 14px; line-height: 1.5; }
+.kb-search { margin-bottom: 12px; }
+.kb-toolbar { margin-bottom: 12px; font-size: 12px; }
+.kb-card { padding: 12px; }
+.kb-card h3 { margin: 8px 0; }
+.kb-card .kb-edit { margin-bottom: 0; }
+.kb-card > p { margin: 10px 0; line-height: 1.5; }
+.kb-details { margin: 10px 0; gap: 4px; font-size: 12px; }
+.kb-card .st-panel { border: 0; border-top: 1px solid #e1e7f2; border-radius: 0; padding: 10px 0 0; margin-top: 10px; }
+.kb-columns:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .kb-page { padding: 16px 14px; }
+  .kb-header { gap: 12px; }
+  .kb-header h2 { font-size: 26px; }
+}

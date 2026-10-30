@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -9,12 +9,14 @@ import {
 from "lucide-react"; import "./workspace.css";
 import TeamMembersPanel, {MyInvitations,} from "./TeamMembersPanel";
 import KanbanBoard from "../kanban/KanbanBoard";
-import WorkspaceOverview, { projectMonthKey, projectMonthLabel, type StatusFilter } from "./WorkspaceOverview";
+import WorkspaceOverview, { WorkspaceSummary, projectMonthKey, projectMonthLabel, type StatusFilter } from "./WorkspaceOverview";
 
 import { useAction, useFeedback } from "../../components/Feedback";
 import ModalDialog from "../../components/ModalDialog";
+import { useAppNavigation, useDraftGuard, useViewState } from "../../components/NavigationExperience";
 import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 import { getErrorMessage, roleLabels } from "../../lib/uiText";
+import type { NotificationNavigation } from "../../lib/notificationNavigation";
 
 type Modal = "workspace" | "project" | null;
 type ProjectStatus = "active" | "completed" | "archived";
@@ -22,30 +24,48 @@ const statusLabel: Record<ProjectStatus, string> = {
   active: "Đang hoạt động", completed: "Hoàn thành", archived: "Đã lưu trữ",
 };
 
-export default function WorkspaceManager() {
+export default function WorkspaceManager({ initialNotification }: { initialNotification?: NotificationNavigation } = {}) {
+  const navigation = useAppNavigation();
+  const [localNotification, setLocalNotification] = useState(initialNotification);
+  const notificationNavigation = navigation ? navigation.route.notification ?? undefined : localNotification;
+  const unavailableRef = useRef<HTMLDivElement>(null);
   const { notify } = useFeedback();
   const { run, pending } = useAction();
   const workspaces = useQuery(api.workspaces.list);
   const createWorkspace = useMutation(api.workspaces.create);
   const createProject = useMutation(api.projects.create);
   const setProjectStatus = useMutation(api.projects.setStatus);
-  const [selectedId, setSelectedId] = useState<Id<"workspaces"> | null>(null);
-  const activeWorkspace = workspaces?.find((item) => item._id === selectedId) ?? workspaces?.[0];
+  const createdWorkspace = useRef<Id<"workspaces"> | null>(null);
+  const [localSelectedId, setLocalSelectedId] = useState<Id<"workspaces"> | null>(initialNotification?.workspaceId ?? null);
+  const selectedId = navigation ? navigation.route.workspaceId : localSelectedId;
+  const activeWorkspace = selectedId ? workspaces?.find(item => item._id === selectedId) : workspaces?.[0];
   const workspaceId = activeWorkspace?._id;
+  const adoptWorkspace = navigation?.adoptWorkspace;
+  useEffect(() => { if (!selectedId && workspaceId) adoptWorkspace?.(workspaceId); }, [selectedId, workspaceId, adoptWorkspace]);
   const projects = useQuery(api.projects.list, workspaceId ? { workspaceId } : "skip");
 
-  const [selectedProjectId, setSelectedProjectId] =
-  useState<Id<"projects"> | null>(null);
+  const [localProjectId, setLocalProjectId] = useState<Id<"projects"> | null>(initialNotification?.projectId ?? null);
+  const selectedProjectId = navigation ? navigation.route.projectId : localProjectId;
+  function selectContext(workspace: Id<"workspaces"> | null, project: Id<"projects"> | null) {
+    if (navigation) return navigation.go({ page: "workspace", workspaceId: workspace, projectId: project, notification: null });
+    setLocalSelectedId(workspace); setLocalProjectId(project); setLocalNotification(undefined); return true;
+  }
   const selectedProject = projects?.find(
-  (project) => project._id === selectedProjectId);
+  (project) => project._id === selectedProjectId && project.workspaceId === workspaceId);
+  const notificationUnavailable = Boolean((selectedId || selectedProjectId) && workspaces !== undefined &&
+    (!activeWorkspace || (selectedProjectId && projects !== undefined && !selectedProject)));
+  useEffect(() => { if (notificationUnavailable) unavailableRef.current?.focus(); }, [notificationUnavailable]);
+  function backToProjects() { selectContext(activeWorkspace?._id ?? null, null); }
   const [modal, setModal] = useState<Modal>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [monthFilter, setMonthFilter] = useState<string | null>(null);
+  const [search, setSearch] = useViewState("workspace:" + workspaceId + ":search", "");
+  const [statusFilter, setStatusFilter] = useViewState<StatusFilter>("workspace:" + workspaceId + ":status", "all");
+  const [monthFilter, setMonthFilter] = useViewState<string | null>("workspace:" + workspaceId + ":month", null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const dismissDraft = useDraftGuard(modal !== null && (name !== "" || description !== ""), busy || pending !== null);
+  const closeModal = () => dismissDraft(() => setModal(null));
   const canCreateProject = activeWorkspace?.myRole !== "viewer";
   const canManageProject = activeWorkspace?.myRole === "owner" || activeWorkspace?.myRole === "admin";
   const visibleProjects = useMemo(
@@ -69,8 +89,7 @@ export default function WorkspaceManager() {
     try {
       if (modal === "workspace") {
         const newId = await createWorkspace({ name: name.trim(), description: description.trim() });
-        setSelectedId(newId);
-        setStatusFilter("all"); setMonthFilter(null); setSearch("");
+        createdWorkspace.current = newId;
       } else if (modal === "project" && workspaceId) {
         await createProject({ workspaceId, name: name.trim(), description: description.trim() });
       }
@@ -84,18 +103,32 @@ export default function WorkspaceManager() {
     }
   }
 
+  useEffect(() => {
+    if (!busy && !modal && createdWorkspace.current) {
+      const id = createdWorkspace.current; createdWorkspace.current = null; selectContext(id, null);
+    }
+  }, [busy, modal]);
+
   async function changeStatus(projectId: Id<"projects">, status: ProjectStatus) {
     await run(() => setProjectStatus({ projectId, status }), "Đã cập nhật trạng thái dự án.", "Không thể cập nhật trạng thái.", projectId);
   }
 
+  if (notificationUnavailable) return <div className="ws-page"><div ref={unavailableRef} tabIndex={-1} role="alert" className="ws-panel ws-empty">
+    <h1>Không thể mở nội dung liên quan</h1><p>Nội dung không còn trong danh sách bạn có thể xem. Nội dung có thể đã bị xóa hoặc quyền truy cập đã thay đổi.</p>
+    <button type="button" className="ui-button ui-secondary" onClick={backToProjects}>Về danh sách dự án</button>
+  </div></div>;
+  if ((selectedId || selectedProjectId) && (workspaces === undefined || (activeWorkspace && selectedProjectId && projects === undefined))) {
+    return <div className="ws-page"><p role="status">Đang mở nội dung liên quan…</p></div>;
+  }
   if (selectedProject && workspaceId && activeWorkspace) {
   return (
-    <ScreenErrorBoundary scope="Bảng công việc" resetKey={selectedProject._id} onReturn={() => setSelectedProjectId(null)} returnLabel="Trở về danh sách dự án" allowReload>
-    <KanbanBoard
+    <ScreenErrorBoundary scope="Bảng công việc" resetKey={selectedProject._id} onReturn={backToProjects} returnLabel="Trở về danh sách dự án" allowReload>
+    <KanbanBoard key={selectedProject._id}
       project={selectedProject}
       workspaceId={workspaceId}
       role={activeWorkspace.myRole}
-      onBack={() => setSelectedProjectId(null)}
+      onBack={backToProjects}
+      notificationNavigation={notificationNavigation}
     />
     </ScreenErrorBoundary>
   );
@@ -115,7 +148,7 @@ export default function WorkspaceManager() {
       </div>
       {error && !modal && <div className="ws-alert" role="alert">{error} <button type="button" onClick={() => setError("")}>Đóng</button></div>}
       {workspaces === undefined ? (
-        <div className="ws-panel ws-empty">Đang tải không gian làm việc...</div>
+        <div className="ws-panel ws-empty" role="status">Đang tải không gian làm việc...</div>
       ) : workspaces.length === 0 ? (
         <div className="ws-panel ws-empty">
           <Layers3 size={38} />
@@ -127,15 +160,13 @@ export default function WorkspaceManager() {
         <>
           <div className="ws-panel ws-switcher">
             <label htmlFor="workspace-select">Không gian đang chọn</label>
-            <select id="workspace-select" value={workspaceId ?? ""} onChange={(e) => {setSelectedId(e.target.value as Id<"workspaces">); setSearch(""); setStatusFilter("all"); setMonthFilter(null); setSelectedProjectId(null); setError("");}}>
+            <select id="workspace-select" value={workspaceId ?? ""} onChange={(e) => {if (selectContext(e.target.value as Id<"workspaces">, null)) setError("");}}>
               {workspaces.map((workspace) => <option key={workspace._id} value={workspace._id}>{workspace.name}</option>)}
             </select>
             <span className="ws-role"><ShieldCheck size={15} /> Vai trò: {activeWorkspace ? roleLabels[activeWorkspace.myRole] : "Đang tải..."}</span>
           </div>
-          <ScreenErrorBoundary scope="Tổng quan dự án" resetKey={workspaceId}>
-            <WorkspaceOverview projects={projects} workspaceCount={workspaces.length} statusFilter={statusFilter} monthFilter={monthFilter} onStatusChange={setStatusFilter} onMonthChange={setMonthFilter} />
-          </ScreenErrorBoundary>
-          <section className="ws-panel ws-projects">
+
+          <section className="ws-panel ws-projects" aria-busy={projects === undefined}>
             <div className="ws-section-head">
               <div><h2>Dự án trong không gian</h2><p>Quản lý dự án theo trạng thái và quyền thành viên.</p></div>
               {canCreateProject && <button type="button" className="ws-btn ui-button ui-primary" onClick={() => openModal("project")}><Plus size={17}/> Dự án mới</button>}
@@ -147,8 +178,11 @@ export default function WorkspaceManager() {
               {monthFilter && <span className="ws-filter-chip">{projectMonthLabel(monthFilter)}</span>}
               <button className="ui-button ui-secondary" type="button" onClick={() => {setStatusFilter("all"); setMonthFilter(null); setSearch("");}}>Xóa bộ lọc</button>
             </div>}
-            {projects === undefined ? <div className="ws-empty">Đang tải dự án...</div> : visibleProjects.length === 0 ? (
-              <div className="ws-empty"><FolderKanban size={34}/><h3>Không có dự án phù hợp</h3><p>{search.trim() || statusFilter !== "all" || monthFilter ? "Thử từ khóa khác hoặc xóa bộ lọc để xem thêm dự án." : "Tạo dự án đầu tiên trong không gian làm việc này."}</p></div>
+          <ScreenErrorBoundary scope="Tổng quan dự án" resetKey={workspaceId}>
+            <WorkspaceSummary projects={projects} workspaceCount={workspaces.length} statusFilter={statusFilter} onStatusChange={setStatusFilter} onMonthChange={setMonthFilter} />
+          </ScreenErrorBoundary>
+            {projects === undefined ? <div className="ws-empty" role="status">Đang tải dự án...</div> : visibleProjects.length === 0 ? (
+              <div className="ws-empty"><FolderKanban size={34}/><h3>{projects.length === 0 ? "Chưa có dự án" : "Không có dự án phù hợp"}</h3><p>{search.trim() || statusFilter !== "all" || monthFilter ? "Thử từ khóa khác hoặc xóa bộ lọc để xem thêm dự án." : "Tạo dự án đầu tiên trong không gian làm việc này."}</p></div>
             ) : (
               <div className="ws-grid">
                 {visibleProjects.map((project) => (
@@ -172,7 +206,7 @@ export default function WorkspaceManager() {
                         type="button"
                         className="kb-open-project ui-button ui-secondary ui-icon"
                         aria-label={`Mở dự án ${project.name}`}
-                        onClick={() => setSelectedProjectId(project._id)}>
+                        onClick={() => selectContext(workspaceId!, project._id)}>
                         <ArrowRight size={17} />
                       </button>
                     </div>
@@ -181,6 +215,9 @@ export default function WorkspaceManager() {
               </div>
             )}
           </section>
+          <ScreenErrorBoundary scope="Tổng quan dự án" resetKey={workspaceId}>
+            <WorkspaceOverview viewKey={workspaceId} projects={projects} workspaceCount={workspaces.length} statusFilter={statusFilter} monthFilter={monthFilter} onStatusChange={setStatusFilter} onMonthChange={setMonthFilter} />
+          </ScreenErrorBoundary>
           <ScreenErrorBoundary scope="Lời mời" resetKey={workspaceId}><MyInvitations /></ScreenErrorBoundary>
            {/* Module 03: Quản lý thành viên và phân quyền */}
           {workspaceId && activeWorkspace && (
@@ -197,13 +234,13 @@ export default function WorkspaceManager() {
 
       {workspaces?.length === 0 && <ScreenErrorBoundary scope="Lời mời"><MyInvitations /></ScreenErrorBoundary>}
 
-      {modal && <ModalDialog className="ws-overlay" label={modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"} busy={busy} onDismiss={() => setModal(null)}>
+      {modal && <ModalDialog className="ws-overlay" label={modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"} busy={busy} onDismiss={closeModal}>
         <form className="ws-dialog" onSubmit={(e) => void submit(e)}>
-          <div className="ws-dialog-top"><div><p className="ws-overline">CLOUDTASK PRO</p><h2>{modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"}</h2></div><button className="ui-button ui-secondary ui-icon" type="button" aria-label="Đóng" onClick={() => setModal(null)} disabled={busy}><X size={21}/></button></div>
+          <div className="ws-dialog-top"><div><p className="ws-overline">CLOUDTASK PRO</p><h2>{modal === "workspace" ? "Tạo không gian làm việc" : "Tạo dự án"}</h2></div><button className="ui-button ui-secondary ui-icon" type="button" aria-label="Đóng" onClick={closeModal} disabled={busy}><X size={21}/></button></div>
           <label>{modal === "workspace" ? "Tên không gian" : "Tên dự án"} *<input disabled={busy} required minLength={3} maxLength={modal === "workspace" ? 80 : 100} value={name} onChange={(e) => setName(e.target.value)} placeholder={modal === "workspace" ? "Ví dụ: Nhóm điện toán đám mây" : "Ví dụ: Ứng dụng quản lý công việc"}/></label>
           <label>Mô tả<textarea disabled={busy} value={description} maxLength={modal === "workspace" ? 500 : 1000} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Mô tả ngắn gọn mục tiêu..."/></label>
           {error && <p className="ws-form-error" role="alert">{error}</p>}
-          <div className="ws-dialog-actions"><button type="button" className="ws-btn ui-button ui-secondary" onClick={() => setModal(null)} disabled={busy}>Hủy</button><button className="ws-btn ui-button ui-primary" aria-busy={busy} disabled={busy || name.trim().length < 3} type="submit">{busy ? "Đang lưu..." : "Tạo mới"}</button></div>
+          <div className="ws-dialog-actions"><button type="button" className="ws-btn ui-button ui-secondary" onClick={closeModal} disabled={busy}>Hủy</button><button className="ws-btn ui-button ui-primary" aria-busy={busy} disabled={busy || name.trim().length < 3} type="submit">{busy ? "Đang lưu..." : "Tạo mới"}</button></div>
         </form>
       </ModalDialog>}
     </div>

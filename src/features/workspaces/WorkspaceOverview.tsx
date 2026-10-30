@@ -1,7 +1,8 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
-import { Archive, CheckCircle2, CircleDot, FolderKanban, Layers3, PieChart, BarChart3 } from "lucide-react";
+import { Archive, CheckCircle2, CircleDot, FolderKanban, Layers3, PieChart, BarChart3, ChevronDown } from "lucide-react";
 import type { Doc } from "../../../convex/_generated/dataModel";
 import "./workspace-overview.css";
+import { useViewState } from "../../components/NavigationExperience";
 
 export type ProjectStatus = Doc<"projects">["status"];
 export type StatusFilter = ProjectStatus | "all";
@@ -25,6 +26,7 @@ const statuses = [
 ] as const;
 
 type Props = {
+  viewKey?: string;
   projects: Doc<"projects">[] | undefined;
   workspaceCount: number;
   statusFilter: StatusFilter;
@@ -33,8 +35,46 @@ type Props = {
   onMonthChange: (month: string | null) => void;
 };
 
-export default function WorkspaceOverview({ projects, workspaceCount, statusFilter, monthFilter, onStatusChange, onMonthChange }: Props) {
-  const [months, setMonths] = useState(6);
+
+export function WorkspaceSummary({ projects, workspaceCount, statusFilter, onStatusChange, onMonthChange }: Pick<Props, "projects" | "workspaceCount" | "statusFilter" | "onStatusChange" | "onMonthChange">) {
+  const loading = projects === undefined;
+  const total = projects?.length ?? 0;
+  const counts = {
+    active: projects?.filter(project => project.status === "active").length ?? 0,
+    completed: projects?.filter(project => project.status === "completed").length ?? 0,
+  };
+  const completionRate = percentage(counts.completed, total);
+  function selectStatus(status: ProjectStatus) { onStatusChange(statusFilter === status ? "all" : status); }
+  return <section className="wo-overview wo-summary" aria-label="Tóm tắt dự án">
+    <div className="wo-metrics" aria-busy={loading}>
+      <article className="wo-metric wo-violet">
+        <span className="wo-metric-icon"><Layers3 size={21} /></span>
+        <span className="wo-metric-label">Không gian của tôi</span>
+        <strong>{workspaceCount}</strong><small>Không gian bạn có quyền truy cập</small>
+      </article>
+      <button type="button" className="wo-metric wo-indigo" aria-pressed={statusFilter === "all"} onClick={() => {onStatusChange("all"); onMonthChange(null);}} disabled={loading}>
+        <span className="wo-metric-icon"><FolderKanban size={21} /></span>
+        <span className="wo-metric-label">Tổng dự án</span>
+        <strong>{loading ? "—" : total}</strong><small>Trong không gian đang chọn</small>
+      </button>
+      <button type="button" className={`wo-metric wo-blue ${statusFilter === "active" ? "is-selected" : ""}`} aria-pressed={statusFilter === "active"} onClick={() => selectStatus("active")} disabled={loading}>
+        <span className="wo-metric-icon"><CircleDot size={21} /></span>
+        <span className="wo-metric-label">Đang hoạt động</span>
+        <strong>{loading ? "—" : counts.active}</strong><small>{loading ? "Đang tải dữ liệu…" : `${percentage(counts.active, total)}% tổng dự án`}</small>
+      </button>
+      <button type="button" className={`wo-metric wo-green ${statusFilter === "completed" ? "is-selected" : ""}`} aria-pressed={statusFilter === "completed"} onClick={() => selectStatus("completed")} disabled={loading}>
+        <span className="wo-metric-icon"><CheckCircle2 size={21} /></span>
+        <span className="wo-metric-label">Đã hoàn thành</span>
+        <strong>{loading ? "—" : counts.completed}</strong><small>{loading ? "Đang tải dữ liệu…" : `${completionRate}% tổng dự án`}</small>
+      </button>
+    </div>
+
+    {loading && <p className="ui-inline-busy" role="status">Đang tải tổng quan dự án...</p>}
+  </section>;
+}
+
+export default function WorkspaceOverview({ viewKey = "workspace", projects, statusFilter, monthFilter, onStatusChange, onMonthChange }: Props) {
+  const [months, setMonths] = useViewState(viewKey + ":chart-range", 6);
   const [hovered, setHovered] = useState<ProjectStatus | null>(null);
   const [focusedMonth, setFocusedMonth] = useState<string | null>(null);
   const loading = projects === undefined;
@@ -71,34 +111,13 @@ export default function WorkspaceOverview({ projects, workspaceCount, statusFilt
     if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectStatus(status); }
   }
 
-  return <section className="wo-overview" aria-label="Tổng quan không gian làm việc" aria-busy={loading}>
-    <div className="wo-metrics">
-      <article className="wo-metric wo-violet">
-        <span className="wo-metric-icon"><Layers3 size={21} /></span>
-        <span className="wo-metric-label">Không gian của tôi</span>
-        <strong>{workspaceCount}</strong><small>Không gian bạn có quyền truy cập</small>
-      </article>
-      <button type="button" className="wo-metric wo-indigo" aria-pressed={statusFilter === "all"} onClick={() => {onStatusChange("all"); onMonthChange(null);}} disabled={loading}>
-        <span className="wo-metric-icon"><FolderKanban size={21} /></span>
-        <span className="wo-metric-label">Tổng dự án</span>
-        <strong>{loading ? "—" : total}</strong><small>Trong không gian đang chọn</small>
-      </button>
-      <button type="button" className={`wo-metric wo-blue ${statusFilter === "active" ? "is-selected" : ""}`} aria-pressed={statusFilter === "active"} onClick={() => selectStatus("active")} disabled={loading}>
-        <span className="wo-metric-icon"><CircleDot size={21} /></span>
-        <span className="wo-metric-label">Đang hoạt động</span>
-        <strong>{loading ? "—" : counts.active}</strong><small>{loading ? "Đang tải dữ liệu…" : `${percentage(counts.active, total)}% tổng dự án`}</small>
-      </button>
-      <button type="button" className={`wo-metric wo-green ${statusFilter === "completed" ? "is-selected" : ""}`} aria-pressed={statusFilter === "completed"} onClick={() => selectStatus("completed")} disabled={loading}>
-        <span className="wo-metric-icon"><CheckCircle2 size={21} /></span>
-        <span className="wo-metric-label">Đã hoàn thành</span>
-        <strong>{loading ? "—" : counts.completed}</strong><small>{loading ? "Đang tải dữ liệu…" : `${completionRate}% tổng dự án`}</small>
-      </button>
-    </div>
-
+  return <details className="wo-overview wo-analytics">
+    <summary><span><strong>Phân tích dự án</strong><span className="wo-analytics-hint">Biểu đồ trạng thái và hoạt động theo tháng</span></span><ChevronDown size={20} aria-hidden="true" /></summary>
+    <section aria-label="Tổng quan không gian làm việc">
     <div className="wo-charts">
       <article className="wo-chart-card">
         <header className="wo-chart-heading"><div><span className="wo-eyebrow"><PieChart size={14} /> PHÂN BỐ DỰ ÁN</span><h2>Trạng thái dự án</h2><p>Bấm vào biểu đồ hoặc trạng thái để lọc.</p></div></header>
-        {loading ? <div className="wo-chart-loading" role="status">Đang tải biểu đồ…</div> : <>
+        {loading ? <div className="wo-chart-loading" aria-hidden="true">Đang tải biểu đồ…</div> : <>
           <div className="wo-donut-layout">
             <div className="wo-donut-wrap">
               <svg className="wo-donut" viewBox="0 0 220 220" aria-label={`Phân bố ${total} dự án theo trạng thái`}>
@@ -132,7 +151,7 @@ export default function WorkspaceOverview({ projects, workspaceCount, statusFilt
         <header className="wo-chart-heading"><div><span className="wo-eyebrow"><BarChart3 size={14} /> HOẠT ĐỘNG THEO THÁNG</span><h2>Dự án được tạo</h2><p>Trạng thái hiện tại, nhóm theo tháng tạo.</p></div>
           <select className="wo-range" aria-label="Khoảng thời gian biểu đồ" value={months} onChange={event => {setMonths(Number(event.target.value)); onMonthChange(null);}}><option value={6}>6 tháng gần đây</option><option value={3}>3 tháng gần đây</option></select>
         </header>
-        {loading ? <div className="wo-chart-loading" role="status">Đang tải biểu đồ…</div> : <>
+        {loading ? <div className="wo-chart-loading" aria-hidden="true">Đang tải biểu đồ…</div> : <>
           <div className="wo-bars-chart" role="group" aria-label={`Số dự án được tạo trong ${months} tháng gần đây`}>
             <div className="wo-axis" aria-hidden="true">{[4, 3, 2, 1, 0].map(tick => <span key={tick}>{ceiling / 4 * tick}</span>)}</div>
             <div className="wo-bars" style={{ gridTemplateColumns: `repeat(${months}, minmax(0, 1fr))` }}>
@@ -148,10 +167,11 @@ export default function WorkspaceOverview({ projects, workspaceCount, statusFilt
               </button>)}
             </div>
           </div>
-          <div className="wo-bar-detail" aria-live="polite">{detail ? <><strong>{projectMonthLabel(detail.key)} · {detail.total} dự án</strong><span>{statuses.map(status => `${status.label}: ${detail.counts[status.key]}`).join(" · ")}</span></> : <><strong>{periodTotal} dự án trong {months} tháng gần đây</strong><span>Bấm vào cột tháng để lọc danh sách bên dưới.</span></>}</div>
+          <div className="wo-bar-detail" aria-live="polite">{detail ? <><strong>{projectMonthLabel(detail.key)} · {detail.total} dự án</strong><span>{statuses.map(status => `${status.label}: ${detail.counts[status.key]}`).join(" · ")}</span></> : <><strong>{periodTotal} dự án trong {months} tháng gần đây</strong><span>Bấm vào cột tháng để lọc danh sách dự án.</span></>}</div>
         </>}
       </article>
     </div>
     <p className="wo-scope">Số liệu dự án thuộc không gian đang chọn · Tự động cập nhật khi dữ liệu thay đổi.</p>
-  </section>;
+    </section>
+  </details>;
 }

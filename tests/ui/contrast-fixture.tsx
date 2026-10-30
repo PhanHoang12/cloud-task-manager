@@ -1,6 +1,6 @@
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import WorkspaceOverview, { type StatusFilter } from "../../src/features/workspaces/WorkspaceOverview";
+import WorkspaceOverview, { WorkspaceSummary, type StatusFilter } from "../../src/features/workspaces/WorkspaceOverview";
 import "../../src/style.css";
 import "../../src/components/ui.css";
 import "../../src/app-layout.css";
@@ -24,10 +24,11 @@ function Fixture() {
       </main></section>
       <section id="workspace" className="ws-page">
         <div className="ws-heading"><div><h1>Không gian làm việc</h1><p className="ws-muted">Theo dõi dự án, tiến độ và thành viên.</p></div></div>
-        <WorkspaceOverview projects={[]} workspaceCount={2} statusFilter={status} monthFilter={month} onStatusChange={setStatus} onMonthChange={setMonth} />
         <section className="ws-panel ws-projects"><div className="ws-section-head"><div><h2>Dự án trong không gian</h2><p>Quản lý dự án theo trạng thái và quyền thành viên.</p></div></div>
+        <WorkspaceSummary projects={[]} workspaceCount={2} statusFilter={status} onStatusChange={setStatus} onMonthChange={setMonth} />
           <div className="ws-grid"><article className="ws-project-card"><h3>Dự án học kỳ</h3><p>Mô tả dự án giúp nhóm hiểu công việc cần hoàn thành.</p><div className="ws-card-foot"><button className="ui-button ui-secondary" type="button">Mở dự án</button></div></article></div>
         </section>
+        <WorkspaceOverview projects={[]} workspaceCount={2} statusFilter={status} monthFilter={month} onStatusChange={setStatus} onMonthChange={setMonth} />
         <section id="members" className="tm-panel tm-member-panel"><header className="tm-member-header"><h2>Thành viên nhóm</h2></header>
           <ul className="tm-member-list"><li className="tm-member-row"><span className="tm-member-avatar" aria-hidden="true">MA</span><div className="tm-member-identity"><strong>Nguyễn Minh Anh</strong><span className="tm-member-email">minhanh@example.com</span></div><div className="tm-member-right"><button className="tm-more" aria-label="Thao tác với thành viên">⋯</button></div></li></ul>
         </section>

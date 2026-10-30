@@ -4,6 +4,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Mail, UserMinus, Send, XCircle, UserRound, Crown, MoreHorizontal, UserPlus, ChevronDown } from "lucide-react";
 import { useUser } from "@clerk/react";
+import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAction, useFeedback } from "../../components/Feedback";
 import "./members.css";
 import { roleLabels } from "../../lib/uiText";
@@ -83,6 +84,8 @@ export default function TeamMembersPanel({ workspaceId, myRole }: { workspaceId:
   const { run, pending } = useAction();
   const { confirm } = useFeedback();
   const busy = pending !== null;
+  useDraftGuard(isManager && email !== "", pending !== null);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (await run(() => invite({ workspaceId, email: email.trim(), role }), "Đã tạo lời mời. Người nhận đăng nhập để thấy lời mời.", "Không thể gửi lời mời.", "invite")) setEmail("");

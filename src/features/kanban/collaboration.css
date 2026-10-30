@@ -677,3 +677,7 @@
   background: #dbeafe;
   color: #2563eb;
 }
+
+/* Shared-shell notification destinations use existing supporting text. */
+.notify-destination { display: block; margin-top: 4px; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.notify-navigation-status { margin: 0; padding: 12px 20px; color: var(--text-secondary); font-size: 13px; }

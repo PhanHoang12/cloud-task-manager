@@ -1,7 +1,7 @@
 /* CloudTask Pro — single navigation shell (Module 07) */
-.ctp-shell { --ctp-side: 264px; display: grid; grid-template-columns: var(--ctp-side) minmax(0, 1fr); min-height: 100vh; background: #f6f8fc; color: #132544; }
+.ctp-shell { --ctp-side: 264px; display: grid; grid-template-columns: var(--ctp-side) minmax(0, 1fr); min-height: 100vh; background: var(--surface-page); color: #132544; }
 .ctp-shell *, .ctp-shell *::before, .ctp-shell *::after { box-sizing: border-box; }
-.ctp-sidebar { position: sticky; top: 0; align-self: start; height: 100vh; padding: 24px 16px; background: #111d35; color: #e7efff; display: flex; flex-direction: column; gap: 24px; }
+.ctp-sidebar { position: sticky; top: 0; align-self: start; height: 100vh; padding: 24px 16px; background: var(--surface-navigation); color: #e7efff; display: flex; flex-direction: column; gap: 24px; }
 .ctp-brand { display: flex; align-items: center; gap: 11px; padding: 3px 10px 16px; font-size: 18px; font-weight: 750; letter-spacing: -.35px; }
 .ctp-brand strong { color: #a8b8ff; }
 .ctp-brand small { display: block; margin-top: 4px; font-size: 9px; letter-spacing: .6px; color: #a8b9d8; font-weight: 800; }
@@ -19,7 +19,7 @@
 .ctp-header-text { display: flex; flex-direction: column; gap: 5px; }
 .ctp-header-overline { font-size: 10px; letter-spacing: 1.4px; color: #7c8aa3; font-weight: 750; }
 .ctp-header-text strong { color: #1b2d4b; font-size: 18px; }
-.ctp-header-account { display: flex; align-items: center; flex: 0 0 auto; }
+.ctp-header-account { display: flex; align-items: center; flex: 0 0 auto; gap: 12px; max-width: 100%; flex-wrap: wrap; }
 .ctp-content { min-width: 0; }
 /* Override old .app-shell / .main layout only for personal dashboard. */
 .ctp-content .personal-dashboard { display: block; min-width: 0; min-height: 0; width: 100%; background: transparent; }

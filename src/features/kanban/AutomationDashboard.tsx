@@ -1,5 +1,7 @@
 
 import { useQuery } from "convex/react";
+import { createPortal } from "react-dom";
+import { ChevronDown } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import "./automation-dashboard.css";
@@ -8,6 +10,8 @@ import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 
 type Props = {
   projectId: Id<"projects">;
+  noticeTarget?: HTMLElement | null;
+  onReviewTasks?: () => void;
 };
 
 function StatCard({
@@ -44,6 +48,8 @@ function StatCard({
 
 export default function AutomationDashboard({
   projectId,
+  noticeTarget,
+  onReviewTasks,
 }: Props) {
   const data = useQuery(
     api.automationStats.projectOverview,
@@ -52,9 +58,9 @@ export default function AutomationDashboard({
 
   if (data === undefined) {
     return (
-      <section className="ad-dashboard ad-loading">
+      <section className="ad-dashboard ad-loading" aria-busy="true">
         <div className="ad-spinner" />
-        <span>Đang tải tổng quan tiến độ...</span>
+        <span role="status">Đang tải tổng quan tiến độ...</span>
       </section>
     );
   }
@@ -94,10 +100,24 @@ export default function AutomationDashboard({
   });
 
   return (
+    <>
+    {/* Keep the existing query and its failure boundary local to analytics.
+        The notice is portaled into the board's earlier DOM slot for native Tab order. */}
+    {noticeTarget && (data.tasks.overdue > 0 || data.tasks.upcoming > 0 || isIncomplete) && createPortal(
+      <div className="ad-deadline-notice" role="status">
+        <div>
+          {data.tasks.overdue > 0 && <strong>Đã quá hạn: {data.tasks.overdue} công việc. </strong>}
+          {data.tasks.upcoming > 0 && <span>Sắp hết hạn: {data.tasks.upcoming} công việc trong vòng 24 giờ. </span>}
+          {isIncomplete && <span>Một phần dữ liệu vượt giới hạn thống kê. Số liệu có thể chưa đầy đủ.</span>}
+        </div>
+        {onReviewTasks && <button type="button" className="ui-button ui-secondary" onClick={onReviewTasks}>Xem bảng công việc</button>}
+      </div>, noticeTarget)}
     <section
       className="ad-dashboard"
       aria-label="Tiến độ và nhắc hạn"
     >
+      <details className="ad-overview">
+        <summary><span>Tiến độ và nhắc hạn</span><ChevronDown size={20} aria-hidden="true" /></summary>
       {/* Header */}
       <div className="ad-header">
         <div>
@@ -268,6 +288,8 @@ export default function AutomationDashboard({
         </div>
         <ScreenErrorBoundary scope="Lịch sử nhắc hạn" resetKey={projectId}><AutomationHistory /></ScreenErrorBoundary>
       </details>
+      </details>
     </section>
+    </>
   );
 }

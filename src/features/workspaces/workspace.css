@@ -15,3 +15,24 @@
 @media (max-width: 400px) { .ws-project-card { padding: 16px; } .ws-card-foot { gap: 8px; flex-wrap: wrap; } .ws-dialog { padding: 20px; } }
 
 .ws-search:focus-within { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+
+/* Workspace actions and project cards lead the overview. */
+.ws-heading { margin-bottom: 20px; }
+.ws-switcher { margin-bottom: 20px; }
+.ws-projects .ws-section-head { padding: 20px 24px; }
+.ws-projects .ws-search { margin-top: 16px; }
+.ws-projects .ws-grid { padding-top: 16px; }
+@media (max-width: 610px) {
+  .ws-heading { gap: 16px; }
+  .ws-projects .ws-section-head { padding: 16px; }
+}
+
+@media (max-width: 610px) {
+  .ws-switcher { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 16px; }
+  .ws-switcher label { font-size: 12px; }
+  .ws-switcher select { grid-column: 1 / -1; grid-row: 2; }
+  .ws-switcher .ws-role { margin: 0; padding: 6px 8px; font-size: 11px; }
+  .ws-projects .ws-section-head { gap: 12px; }
+  .ws-projects .ws-section-head p { display: none; }
+}

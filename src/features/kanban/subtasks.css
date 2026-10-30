@@ -9,3 +9,13 @@
 .st-edit-form > input { width: 100%; min-width: 0; padding: 10px; border: 1px solid #dce3f2; border-radius: 9px; }
 .st-add { flex-wrap: wrap; }
 .st-add input { flex: 1 1 120px; }
+
+/* Native disclosure keeps editor DOM, local drafts and subscriptions mounted. */
+.st-disclosure > summary { list-style: none; cursor: pointer; padding: 6px 0; min-height: 44px; }
+.st-disclosure > summary::-webkit-details-marker { display: none; }
+.st-disclosure > summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; border-radius: 6px; }
+.st-disclosure .st-heading { align-items: center; gap: 6px; }
+.st-disclosure .st-heading > span { color: var(--text-secondary); font-size: 12px; margin-left: auto; }
+.st-disclosure .st-heading > svg { flex: 0 0 16px; }
+.st-disclosure[open] > summary .st-heading > svg { transform: rotate(180deg); }
+.st-disclosure > summary .st-bar { margin: 8px 0 0; height: 5px; }

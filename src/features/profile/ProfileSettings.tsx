@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import "./profile.css";
 import { useAction, useFeedback } from "../../components/Feedback";
+import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAuth } from "@clerk/react";
 
 export default function ProfileSettings() {
@@ -20,8 +21,15 @@ export default function ProfileSettings() {
 
   const { run, pending } = useAction();
   const { confirm } = useFeedback();
+  const [baseline, setBaseline] = useState<string | null>(null);
+  const snapshot = JSON.stringify({ fullName, bio, phone, studentId, department, className });
+  const dirty = baseline !== null && snapshot !== baseline;
+  const dirtyRef = useRef(dirty); dirtyRef.current = dirty;
+  useDraftGuard(dirty, pending !== null);
 
   useEffect(() => {
+    if (!data || dirtyRef.current) return;
+    setBaseline(JSON.stringify({ fullName: data.profile?.fullName ?? data.clerk.name ?? "", bio: data.profile?.bio ?? "", phone: data.profile?.phone ?? "", studentId: data.profile?.studentId ?? "", department: data.profile?.department ?? "", className: data.profile?.className ?? "" }));
     setFullName(data?.profile?.fullName ?? data?.clerk.name ?? "");
     setBio(data?.profile?.bio ?? "");
     setPhone(data?.profile?.phone ?? "");
@@ -33,11 +41,12 @@ export default function ProfileSettings() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await run(() => upsert({
+    const submitted = snapshot;
+    if (await run(() => upsert({
       fullName, bio: bio || undefined, phone: phone || undefined,
       studentId: studentId || undefined, department: department || undefined,
       className: className || undefined,
-    }), "Cập nhật hồ sơ thành công.", "Không thể cập nhật hồ sơ.", "save");
+    }), "Cập nhật hồ sơ thành công.", "Không thể cập nhật hồ sơ.", "save")) setBaseline(submitted);
   }
 
   async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
@@ -76,7 +85,7 @@ export default function ProfileSettings() {
   }
 
   if (!data) {
-    return <div className="profile-page"><div className="profile-card">Đang tải hồ sơ...</div></div>;
+    return <div className="profile-page"><div className="profile-card" role="status">Đang tải hồ sơ...</div></div>;
   }
 
   const avatarUrl = data.profile?.avatarUrl;
@@ -120,7 +129,7 @@ export default function ProfileSettings() {
         </section>
 
         <section className="profile-card">
-          <form className="profile-form" onSubmit={(e) => void handleSubmit(e)}>
+          <form className="profile-form ui-form" onSubmit={(e) => void handleSubmit(e)}>
             <fieldset className="profile-fields" disabled={pending!==null}>
             <div className="profile-section-title">
               <h2>Thông tin cá nhân</h2>

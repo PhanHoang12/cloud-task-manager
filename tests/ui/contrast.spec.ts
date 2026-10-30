@@ -53,9 +53,15 @@ async function readPair(locator: Locator): Promise<Pair> {
 test("H2 text contrast meets AA on computed backgrounds and interaction states", async ({ page }, testInfo) => {
   await page.goto("/tests/ui/contrast-fixture.html");
   await page.locator("#personal .stat-title").waitFor();
+  await page.locator(".wo-analytics > summary").click();
   const report: { label: string; state: string; foreground: string; backgrounds: string[]; before: number; after: number; minimum: number }[] = [];
   for (const [label, selector, oldColor, minimum = 4.5] of cases) {
     const target = page.locator(selector).first();
+    // M9 hides only secondary overview copy at the mobile breakpoint.
+    if (testInfo.project.name === "mobile-viewport" && (selector === "#workspace .ws-section-head p" || selector.startsWith("#workspace .wo-") && selector.endsWith(" > small"))) {
+      await expect(target).toBeHidden();
+      continue;
+    }
     const states = ["rest", "hover", "focus-within", "active", "selected"];
     const interactive = target.locator("xpath=ancestor-or-self::*[self::button or @draggable or contains(concat(' ', normalize-space(@class), ' '), ' ws-project-card ') or contains(concat(' ', normalize-space(@class), ' '), ' tm-member-row ') or contains(concat(' ', normalize-space(@class), ' '), ' task ')][1]");
     const hasInteractive = await interactive.count() > 0;

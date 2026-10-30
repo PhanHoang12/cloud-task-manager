@@ -12,8 +12,34 @@ colors:
   ws-blue: "#4866ef"
   wo-ink: "#17243e"
   wo-muted: "#5e6d83"
+  surface-page: "#f6f8fc"
+  surface-default: "#ffffff"
+  surface-subtle: "#f8faff"
+  surface-hover: "#f1f5ff"
+  surface-navigation: "#111d35"
+  text-primary: "#17243e"
+  text-label: "#33435d"
+  text-action-secondary: "#425273"
+  text-inverse: "#ffffff"
+  border-default: "#dce2ec"
+  border-subtle: "#e2e8f0"
+  border-hover: "#b6c3ed"
+  text-danger-strong: "#991b1b"
+  surface-danger: "#fef2f2"
+  surface-danger-hover: "#fee2e2"
+  border-danger: "#fecaca"
+  surface-success: "#f0fdf4"
+  border-success: "#bbf7d0"
+  text-success: "#166534"
+  surface-backdrop: "#10203c99"
+  border-danger-hover: "#fca5a5"
+  focus-ring-legacy: "#a5b4fc"
 rounded:
   action-radius: "9px"
+  radius-control: "9px"
+  radius-panel: "14px"
+  radius-compact: "12px"
+  radius-dialog: "16px"
 ---
 
 # Design System: CloudTask Pro
@@ -26,7 +52,7 @@ The implemented interface uses a dark navy navigation area, pale cool page backg
 
 The user-confirmed commitments in [PRODUCT.md](PRODUCT.md) are Vietnamese-first content, clear hierarchy, consistent design tokens, light modern SaaS styling, responsive desktop/mobile use, and accessibility. The implementation has partial shared tokens and substantial feature-local variation; the commitment to consistency does not establish that all values are already unified.
 
-**Token provenance:** every frontmatter key corresponds exactly to an existing CSS custom property with its leading `--` removed. The shared supporting-text property comes from `src/style.css`; action properties come from `src/components/ui.css`; workspace properties from `workspace.css`; overview properties from `workspace-overview.css`. Their scopes remain distinct even when values match. No typography, spacing, breakpoint, or shadow tokens have been invented. Scoped aliases resolve to the corresponding literal frontmatter color. Literal values below are observations, not a new token scale. The scoped sidebar width and contextual chart variables are recorded in the relevant sections.
+**Token provenance:** M10 Phase 1 consolidates existing literal values into semantic root properties in src/components/ui.css. The root font in src/style.css and the shell surfaces in src/app-layout.css consume these properties. Existing action and focus names remain compatible aliases. Feature-local workspace and chart properties remain separate; this foundation does not claim every screen has migrated. The M10 section below records adoption, dimensions, exceptions and verification.
 
 **Source map**
 
@@ -36,6 +62,9 @@ The user-confirmed commitments in [PRODUCT.md](PRODUCT.md) are Vietnamese-first 
 | Render/query failure recovery | [ScreenErrorBoundary.tsx](src/components/ScreenErrorBoundary.tsx), [screen-error.css](src/components/screen-error.css) |
 | Shared actions, feedback, confirmations | [ui.css](src/components/ui.css), [Feedback.tsx](src/components/Feedback.tsx) |
 | Current navigation and account menu | [app-layout.css](src/app-layout.css), [App.tsx](src/App.tsx) |
+| Session navigation, view preferences and draft guards | [NavigationExperience.tsx](src/components/NavigationExperience.tsx) |
+| Non-modal popup focus | [useNonModalPopup.ts](src/components/useNonModalPopup.ts) |
+| Notification destination resolution | [notificationNavigation.ts](src/lib/notificationNavigation.ts) |
 | Workspaces and projects | [workspace.css](src/features/workspaces/workspace.css), [WorkspaceManager.tsx](src/features/workspaces/WorkspaceManager.tsx) |
 | Metrics and charts | [workspace-overview.css](src/features/workspaces/workspace-overview.css), [WorkspaceOverview.tsx](src/features/workspaces/WorkspaceOverview.tsx) |
 | Members and invitations | [members.css](src/features/workspaces/members.css), [TeamMembersPanel.tsx](src/features/workspaces/TeamMembersPanel.tsx) |
@@ -46,7 +75,7 @@ The user-confirmed commitments in [PRODUCT.md](PRODUCT.md) are Vietnamese-first 
 | Profile | [profile.css](src/features/profile/profile.css), [ProfileSettings.tsx](src/features/profile/ProfileSettings.tsx) |
 | Entry and Vietnamese wording | [main.tsx](src/main.tsx), [index.html](index.html), [uiText.ts](src/lib/uiText.ts), [clerkVi.ts](src/lib/clerkVi.ts) |
 
-The current shell is the `ctp-` implementation. Older `app-shell`, `sidebar`, and `cloud-main-nav` styles remain in the global stylesheet but are not the navigation rendered by current JSX. Similarly, legacy workspace statistics and profile-button styles do not describe the current overview metrics or the shared buttons used by the profile. The document prioritizes selectors actually used by components. Only this document is produced; no sidecar or application changes accompany it.
+The current shell is the `ctp-` implementation. Older `app-shell`, `sidebar`, and `cloud-main-nav` styles remain in the global stylesheet but are not the navigation rendered by current JSX. Similarly, legacy workspace statistics and profile-button styles do not describe the current overview metrics or the shared buttons used by the profile. The document prioritizes selectors actually used by components. The initial document-only inventory has since been extended by the implementation records below.
 
 ## Colors
 
@@ -62,7 +91,7 @@ Several blue/indigo values coexist. They are feature-specific existing values, n
 | `#3656a1` / `#a6b8ff` | Selected navigation background / inset left marker and navigation focus outline |
 | `#4965ed` | Kanban, subtask progress, discussion and notification accents |
 | `#4f46e5` | Profile overline and account-avatar fallback |
-| `#a5b4fc` | Shared button/select focus outline |
+| `#a5b4fc` | Retained legacy button/select focus fallback; ui-button and opted-in fields now use focus-ring |
 | `#eef2ff` | Repeated pale indigo surface: account hover/fallback, filters, admin badge, profile avatar border |
 | `#4866ef` | Existing `--ws-blue`; legacy workspace-primary styling. Current workspace CTAs use the shared primary button classes |
 
@@ -116,7 +145,7 @@ Status colors are accompanied by Vietnamese labels, numbers, or icons. Their sha
 
 ### H2 supporting-text contrast
 
-The shared root token `--text-secondary` is defined in `src/style.css`. It reuses the existing workspace muted-text color. `--ws-muted` and `--wo-muted` are scoped aliases; their frontmatter values are the resolved color. The token is applied only to personal statistic labels/footnotes and descriptions, workspace/project descriptions, overview descriptions/metric supporting text, Kanban descriptions/metadata, member emails, and comment timestamps.
+The shared root token `--text-secondary` is now defined in `src/components/ui.css` (consolidated during M10 Phase 1). It reuses the existing workspace muted-text color. `--ws-muted` and `--wo-muted` are scoped aliases; their frontmatter values are the resolved color. The token is applied only to personal statistic labels/footnotes and descriptions, workspace/project descriptions, overview descriptions/metric supporting text, Kanban descriptions/metadata, member emails, and comment timestamps.
 
 All corrected normal-text roles resolve to `text-secondary`. Personal statistic numbers retain their existing dark foreground and exceed the large-text threshold. Backgrounds, opacity, font sizes, layout, status colors, form behavior, and H1 modal implementation are unchanged.
 
@@ -150,7 +179,7 @@ This is a targeted H2 record, not whole-application accessibility certification.
 
 ## Typography
 
-**Verified family:** the root declares `Inter, system-ui, Arial, sans-serif`. Google Fonts is imported for Inter weights 400, 500, 600, 700, and 800 with `display=swap`. Form controls inherit the font. There is no separate display or monospace family, and no named typography token scale.
+**Verified family:** the root declares `Inter, system-ui, Arial, sans-serif`. Google Fonts is imported for Inter weights 400, 500, 600, 700, and 800 with `display=swap`. Form controls inherit the font; the root now reads the shared --font-body property. There is no separate display or monospace family. M10 adds tokens for the existing shared control, caption and body roles; feature heading sizes remain local.
 
 The CSS also requests weights such as 550, 650, 750, and 850. Those declarations are real, but exact font-face selection depends on the delivered fonts and browser. They do not prove that those weights are downloaded. The root sets `font-synthesis: none`.
 
@@ -193,7 +222,7 @@ Kanban has horizontal overscroll containment, proximity scroll snapping, and lan
 
 ### Spacing
 
-There are no shared spacing custom properties. Recurring literal gaps include 8px, 10px, 12px, 14px, 16px, 18px, 20px, 22px, and 24px; these do not form an enforced base-eight scale.
+M10 introduces shared 8/12/16/24px spacing roles for opted-in primitives. Recurring feature-local gaps remain 8px, 10px, 12px, 14px, 16px, 18px, 20px, 22px and 24px; page spacing is not normalized in this phase.
 
 Representative existing measurements:
 
@@ -281,7 +310,7 @@ Current explicit stacking values include personal overlay 10, account menu 30–
 | Comment bubble | Asymmetric `4px 13px 13px 13px` |
 | Avatars | Circular; account 36px, member 52px (44px mobile), profile 108px, comments 32px (28px narrow) |
 
-There is no shared radius scale beyond the action token. Profile fields have 14px corners while many task/member fields use 7–10px; preserve the distinction when describing the incumbent implementation.
+M10 defines control (9px), panel (14px), compact (12px) and dialog (16px) roles. Opted-in Profile and modal fields use the control radius. Unmigrated fields and larger profile cards retain documented local exceptions.
 
 ## Components
 
@@ -296,7 +325,7 @@ Current CTA JSX combines feature classes with `ui-button` and `ui-primary`, `ui-
 - **Focus:** shared outline is 3px in pale indigo with a 3px offset; navigation, account, and notification controls have their own variations.
 - **Disabled:** the shared rule uses .55 opacity and a not-allowed cursor. Member-panel buttons have a more specific disabled rule that uses .5 opacity and the default cursor, including shared buttons inside that panel. Native `disabled` is set in JSX for pending/invalid actions; `aria-disabled` alone would not prevent interaction.
 - **Busy:** `aria-busy="true"` inserts a 14px circular indicator with an .8s linear spin. Several controls also switch to Vietnamese pending text. The pseudo-element belongs to shared buttons, not every element carrying `aria-busy`.
-- **Motion:** shared background/border transitions are .15s. There is no universal pressed-state color; Kanban cards separately change grab/grabbing cursors.
+- **Motion/states:** shared background/border transitions remain .15s and are disabled under reduced motion. Shared primary, secondary and danger actions now have explicit active states using existing colors. Kanban cards retain their grab/grabbing cursors.
 
 Feature-specific buttons remain for filters, navigation, notification controls, history toggles, and member actions. The shared API does not imply every clickable element has the same dimensions or styling.
 
@@ -308,27 +337,27 @@ Forms use native inputs, textareas, selects, checkboxes, nested labels or explic
 - Workspace dialog fields: 9px radius and 12px 13px padding.
 - Kanban fields: 8px radius and 9px padding; board search has a 10px radius and 13px padding.
 - Member invitation fields: 8px radius and 10px padding.
-- Profile fields: 14px radius, 12px 14px padding, explicit outline removal, indigo focus border, and `0 0 0 4px rgba(99, 102, 241, 0.12)` focus shadow.
+- Profile fields now opt into ui-form: 9px radius, shared border/text/placeholder colors, blue focus border and 3px keyboard outline. Existing 12px 14px padding and field sizes are preserved; the old indigo halo is replaced by the shared outline.
 - Comment textarea: 9px radius, 10px 11px padding, blue focus border, and `0 0 0 3px rgba(73, 101, 237, 0.1)` focus shadow.
 - Search fields use labeled/aria-labeled inputs. Personal and workspace inner search inputs suppress their own outlines; their wrappers now expose the shared search focus ring through :focus-within (see H3 below).
-- Select focus benefits from the global `select:focus-visible` rule. There is no equivalent shared focus rule for every input/textarea.
-- Errors are shown inline and/or in shared toasts. There is no common field-invalid border API or consistently applied `aria-invalid` / field-error association.
+- Legacy selects retain the global select:focus-visible fallback. ui-button and supported ui-form/ui-field controls use the stronger shared focus token. Unmigrated feature inputs remain outside the automatic opt-in.
+- Errors retain existing inline/toast behavior. Opted-in fields now support aria-invalid=true and browser user-invalid borders; semantic error associations and message content remain owned by each feature.
 
 ### Search focus (H3)
 
-Personal task search (`.search`) and workspace/project search (`.ws-search`) use a 3px solid wrapper outline with a 2px offset while `:focus-within` matches. The shared root `--focus-ring` aliases `--action-primary`; its resolved color is recorded in frontmatter. It is scoped to these search treatments and does not replace existing button, select, dialog, or navigation focus rules.
+Personal task search (`.search`) and workspace/project search (`.ws-search`) use a 3px solid wrapper outline with a 2px offset while `:focus-within` matches. The shared root `--focus-ring` aliases `--action-primary`; its resolved color is recorded in frontmatter. M10 extends this token to shared buttons and opted-in fields while retaining existing search focus-within behavior and legacy focus fallbacks.
 
 The outline appears for keyboard focus and pointer focus, remains visible while typing, and disappears when focus leaves the wrapper. Outlines do not participate in layout: border widths, padding, dimensions, and search behavior remain unchanged. Existing panel padding and search margins provide room for the external ring within clipped containers.
 
-The ring is approximately 4.89:1 against white panels and 4.60:1 against the pale page background (`#f6f8fc`). Browser tests check the computed ring against both backgrounds, Tab/Shift+Tab entry/exit, unchanged field/wrapper rectangles, typing/clearing, and emulated forced-colors visibility at desktop and mobile viewport sizes. These are isolated fixture checks using application CSS, not authenticated application or physical-device validation.
+The ring is approximately 4.89:1 against white panels and 4.59:1 against the pale page background (`#f6f8fc`). Browser tests check the computed ring against both backgrounds, Tab/Shift+Tab entry/exit, unchanged field/wrapper rectangles, typing/clearing, and emulated forced-colors visibility at desktop and mobile viewport sizes. These are isolated fixture checks using application CSS, not authenticated application or physical-device validation.
 
 ### Navigation and account menu
 
 The sidebar contains the cloud brand, three labeled icon-and-text navigation buttons, and an automatic-sync note. Active navigation has a blue fill, white text, and a 3px inset marker. Hover adds a lighter navy surface and a 2px horizontal translation over .16s.
 
-The nav has a Vietnamese accessible name; active buttons use `aria-current="page"`. Mobile disclosure has `aria-expanded` and `aria-controls`. Selecting a page closes the menu and returns focus to its toggle on narrow screens; Escape inside the sidebar also closes it and focuses the toggle. Navigation uses React state rather than route links.
+The nav has a Vietnamese accessible name; active buttons use `aria-current="page"`. Mobile disclosure has `aria-expanded` and `aria-controls`. Selecting a page closes the menu and returns focus to its toggle on narrow screens; Escape inside the sidebar also closes it and focuses the toggle. Navigation uses React state and the native History API rather than route links or a routing library; M4 details follow below.
 
-The account control is a pill containing a 36px avatar, truncated name, and chevron. Its dropdown is at most 300px wide, right-aligned, with profile, security, and logout actions. It has an expanded-state attribute and an outside dismissal button. Unlike the member popover, the account menu has no dedicated Escape, initial-focus, or arrow-key handling in its component.
+The account control is a pill containing a 36px avatar, truncated name, and chevron. Its dropdown is at most 300px wide, right-aligned, with profile, security, and logout actions. It is a named group of native action buttons opened by a disclosure trigger. Its existing click-away backdrop is excluded from Tab order; keyboard entry, Escape, focus restoration and Tab exit follow the M2 rules below. Native buttons retain their ordinary activation and sequential keyboard behavior.
 
 ### Cards, lists, chips, and empty states
 
@@ -349,13 +378,99 @@ Subtasks use labeled 20px checkboxes, inline editing, count/percentage, and a 7p
 
 Automation keeps secondary progress/notification detail and system history inside a native disclosure. History returns no UI while loading or when its response is unauthorized. When present, it uses native table markup in a focusable horizontal scrolling wrapper, labeled run-status pills, and hover-highlighted rows.
 
+### Assignee names (M1)
+
+Kanban reuses the existing workspace-authorized `members.list` directory for member names and public account emails. Names are shown in the native assignee select and task-card metadata; the current member is marked “(Bạn)”. Emails appear only to distinguish duplicate names or identify a member whose name is unavailable. If labels still collide, the current roster position distinguishes them; that position is not a persistent identifier. Private profile fields are neither requested nor rendered by this presentation code.
+
+Missing names use “Thành viên chưa có tên”; a pending directory uses “Đang tải người phụ trách…”; an assigned ID absent from the returned directory uses “Thành viên không có trong danh sách”. The last label does not assert that the person was removed, since the existing directory is capped at 100 members. Unassigned tasks retain “Chưa phân công”. A known Clerk name can identify the current user while directory information is unavailable.
+
+Original Clerk user IDs remain select values and mutation arguments. The existing exclusion of viewers from new assignments and owner/admin/member/viewer editing rules are preserved. An existing assignment that is loading, absent, or now ineligible remains represented by a disabled selected option until the user explicitly chooses an eligible member or clears it. Directory updates change labels without clearing form state or making a mutation.
+
+The existing Kanban metadata wrapping and native form-control styles are retained; no colors or design tokens change. Pure unit tests cover label resolution, privacy, duplicate names, and missing/loading profiles. Browser fixtures drive the actual Kanban board with mocked services at desktop/tablet/mobile sizes, checking visible labels, original ID payloads, profile and membership updates, long names, existing role restrictions, and H1 focus behavior. Authenticated deployment integration and physical-device/assistive-technology behavior remain separate checks.
+
+### Comment author names
+
+Comment names and monograms now use a board-level directory built from the existing workspace-authorized members.list result. The board reads the existing profiles.me query once to obtain the caller's stored public name fields; no profile lookup accepts an arbitrary author ID. Identical query subscriptions are deduplicated by the installed Convex client, and comments receive the shared name map rather than adding per-task/per-comment profile queries.
+
+Current custom profile display names take precedence, with stored account names as the existing directory fallback. The member query can otherwise substitute JWT identity only for the caller when their stored profile is missing. For that caller, the frontend checks stored fullName/accountName from profiles.me, excluding its clerk.name, so a missing/default profile receives the same neutral fallback another viewer receives.
+
+Pending identity data says “Đang tải tên thành viên…”; unavailable, unnamed, removed or unreturned members say “Thành viên”. The directory is capped at 100 members, so absence does not assert deletion. Names never fall back to IDs/fragments, emails, roster positions, “Tôi” or “(Bạn)”. Monograms derive from the same resolved name for every viewer, with a generic person icon otherwise. Existing mine/other avatar styling may still reflect ownership.
+
+Original author IDs still determine ownership and deletion controls. Stored comments have no author-name snapshot; profile updates change presentation without changing historical content or relationships. Browser evidence uses actual Kanban/comments with service mocks; live multi-account synchronization remains a manual check.
+
 ### Discussion and notifications
 
 Discussion expands from a button carrying `aria-expanded`; it shows counts, avatar/author/time metadata, wrapped text bubbles, deletion controls, and a textarea with a 2000-character count. New content enters with an .18s fade/4px slide; the chevron rotates over .2s.
 
-The notification trigger is a 48px circular icon button with a red unread badge. Its accessible name includes the unread count; the decorative badge is hidden from assistive technology. Notifications use an unread background and dot, typed icons, message text, and relative/localized timestamps.
+The shared application header contains one 48px circular notification button with a red unread badge, available across authenticated screens. Its accessible name includes the unread count; the decorative badge is hidden from assistive technology. Notifications use an unread background and dot, typed icons, message text, and relative/localized timestamps.
 
-The notification panel is portaled to the document body. JavaScript positions it near the trigger, constrains it to a 12px viewport margin, can place it above the trigger, and recalculates on resize/scroll. Outside pointer events and Escape close it; Escape returns focus to the trigger. Although the trigger advertises `aria-haspopup="dialog"`, the panel itself has no dialog role, explicit accessible-name association, opening-focus movement, or focus trap.
+The notification panel is portaled to the document body. JavaScript positions it near the trigger, constrains it to a 12px viewport margin, can place it above the trigger, and recalculates on resize/scroll. It is a non-modal `role="dialog"` with `aria-modal="false"`, named by its “Thông báo” heading; the trigger advertises `aria-haspopup="dialog"` and references the panel. Opening focuses Close, and navigation/dismissal follow the M2 rules below. Positioning, list styling, read actions, unread counts, and existing error feedback are preserved.
+
+
+### Navigation context and unsaved changes (M4)
+
+NavigationExperience.tsx keeps the selected page, workspace/project IDs and useful view preferences in memory for the mounted authenticated application session. Personal search/status filters, workspace search/status/month filters and chart range, and per-project Kanban search survive screen switches. The initially displayed workspace is remembered after its membership has been validated. Returning from a board retains its workspace and project-list filters. Confirmed navigation discards form drafts; cancelling it retains the current form and its values.
+
+Only the active screen is mounted. Context restoration waits for the current workspace membership list and the selected workspace's project query. It never falls back to another workspace while retaining a stale project ID. Missing/deleted/inaccessible selections receive recovery guidance and a safe project-list action. The existing role from the live workspace result still governs board controls. H4 query errors remain errors, rather than becoming an empty list.
+
+Explicit page, workspace, project and notification navigation uses native history.pushState; the initial entry and validated default workspace use replaceState. Back/Forward restores known entries from this session. History stores only a random session token, entry token and position, while route context remains in memory. No workspace/task/user IDs, searches, drafts or profile values are added to URLs, localStorage or sessionStorage. An identity change keys a new navigation provider so the prior account’s view state is cleared. A reload, authentication-shell unmount or another tab starts fresh; this does not introduce reloadable project URLs or cross-session restoration. Unknown/stale history entries are not interpreted as authorized destinations.
+
+Dirty guards cover personal and Kanban create/edit dialogs, workspace/project creation, profile fields, subtask add/rename, comments and invitation email. Explicit dismissals and navigation ask a native Vietnamese browser confirmation before discarding edits. Unchanged/reverted values do not prompt. Failed saves retain values. Successful saves clear the relevant guard. Profile subscription updates do not overwrite a dirty local profile. Closing a dirty comment panel also confirms before clearing its unsent text. Account logout checks the same frontend guard before invoking the unchanged Clerk callback.
+
+Back/Forward cancellation restores the current history position without remounting the form. Pending guarded operations block navigation, announce that saving is still in progress, and clear that notice after completion. Dirty/pending forms register beforeunload protection for document exit; the browser controls its generic message and may suppress it on some devices. Draft contents are held only by their form components, not in the navigation store. No recovery after a crash or forced termination is promised.
+
+M3 notification destination lookup still uses existing authorized queries. Cancelled discard confirmation leaves the popup/current form open; an already-started mark-read can still complete. Successful navigation selects the target workspace/project, clears a conflicting board search and focuses the target once. A repeated explicit notification resets local board dialog state; ordinary query updates do not repeatedly focus or remount the board.
+
+### Loading and data-state clarity (M5)
+
+Loading is determined by useQuery returning undefined, rather than by array length or numeric truthiness. Personal statistics use an em dash and filter counts use an ellipsis until tasks arrive. Their metric region exposes aria-busy and the task-list loading copy is a status announcement. Successful empty task results show 0 and 0%, with the genuine empty-state action.
+
+Notification loading uses the accessible trigger name “Thông báo, đang tải”, aria-busy, and an ellipsis badge. The panel describes unread counts as loading and announces its loading operation outside the busy list. It does not claim zero, read-all or an empty inbox until the query succeeds. Loading-to-data updates preserve Close focus and the shared trigger instance; Escape/Tab behavior remains M2's non-modal behavior.
+
+Workspace/project loading messages have status semantics. Overview metrics keep their existing em-dash placeholders and announce loading separately from busy metric regions; charts do not expose fabricated zero distributions while pending. Loaded empty project lists show zero metrics and “Chưa có dự án”, while a filter with no matches retains its distinct message. Kanban lane counts use ellipses while task data is pending; subtask progress omits aria-valuenow until loaded. Comment/profile/automation loading copy also has status semantics. Restricted automation history retains its existing no-UI-until-authorized behavior.
+
+Loading instructions use the existing text-secondary token on their light surfaces, including personal tasks, Kanban, comments and the overview status. The implementation uses clear text and existing metric placeholders rather than animated skeletons, artificial delays or extra loading queries. One shared notification subscription remains mounted, inactive screens unmount their queries, and filter memory does not keep duplicate hidden screen trees. No new color/focus tokens, layout system, authentication flow or backend behavior is introduced. Existing H4 boundaries retain explicit Retry and safe access-error guidance.
+
+Browser regressions use actual React screens with Clerk/Convex service mocks in Edge at 1280×800, 820×1180 and 390×844. They cover restoration, scoped filters, dirty cancellation/confirmation, history, access changes, M3 destinations, loading-to-zero, query-error Retry and logical subscription counts. These checks do not establish real screen-reader announcements, live authorization/delivery, physical-device behavior or behavior in other engines.
+
+### Shared notification access and destinations (M3)
+
+A single Notification Center lives in the authenticated application header, before the account disclosure. It is available from Personal Tasks, Workspace/Project views, Kanban and Profile. The board no longer renders its own trigger. The existing circular button, badge, panel styling, realtime `notifications.mine` subscription and `markRead({ notificationId })` operation are retained. Header controls can wrap when a local error fallback needs space.
+
+Activating an unread notification marks it read. When explicit destination identifiers are available, the same button also opens the related content and includes “Mở công việc” or “Mở dự án” in its visible/accessible label. Already-read notifications can still open a destination without another mark-read mutation. Records without a resolvable destination keep their mark-read behavior.
+
+| Modeled kind / record | Supported destination |
+| --- | --- |
+| `comment` with project/task IDs | Related task card; no exact-comment destination is fabricated because no comment ID is provided |
+| `assigned` with project/task IDs | Related task card |
+| `deadline_upcoming` with project/task IDs | Related task card |
+| `deadline_overdue` with project/task IDs | Related task card |
+| A record with project ID only | Project board and heading |
+| Missing project ID, including task-ID-only records | No destination; mark-read only |
+
+The four current schema kinds contain project and task IDs. Graceful handling of incomplete records is defensive behavior, not a claim that such records exist in the deployment. Destination resolution does not parse message text, titles, user IDs, or arbitrary URLs.
+
+The existing APIs do not expose a direct project-to-workspace lookup. On explicit activation, the frontend obtains the signed-in user's workspace list, checks each workspace's permission-enforced project list until it finds the specified project, and validates any task ID against that project's permission-enforced task list. It stops on a match/failure and creates no background polling or automatic retries. Existing limits remain: 100 workspaces, 100 projects per workspace and 200 tasks per project. A target outside those returned lists receives unavailable guidance; the interface does not assert a specific deletion or access-loss cause.
+
+The destination view rechecks the live workspace/project lists and passes their existing role to the unchanged board permission controls. Deleted, missing, inaccessible, or mismatched targets show fixed Vietnamese recovery text without exposing raw error details. Recognized authentication failures receive session guidance. A target that becomes unavailable between lookup and rendering receives an explanation and a safe route back; a disappearing task leaves the accessible project usable. No authorization is granted by notification IDs.
+
+Successful in-app navigation selects the correct workspace/project and focuses/scrolls the task card once, or the project heading for project-only records. It opens no edit modal and preserves viewer/inactive-project restrictions. The target uses the existing focus-ring token without a layout shift. Returning to projects retains the resolved workspace. Repeating a notification is an explicit new navigation request; realtime data changes do not repeatedly take focus. A successful explicit request also resets an existing main-screen error boundary, including when the active page remains Workspace. URLs remain under the incumbent state-based navigation.
+
+M2 non-modal semantics, Escape, trigger restoration and portal Tab bridging remain in place. With the trigger in the shared header, forward Tab exit continues to the account trigger. Pending destination resolution announces “Đang mở nội dung liên quan…”. Closing the popup by Escape, its trigger, Close, or outside interaction cancels navigation and ignores late results; an already-started mark-read mutation can still complete. Failures retain the current view and allow retry from the notification list.
+
+Unit tests cover identifier sufficiency, authorized lookup, cancellation and safe feedback. Browser fixtures use the actual application with service mocks at desktop/tablet/mobile viewports for shared access, badge updates, every modeled kind, safe failures, role restrictions, focus, repeated navigation and local H4 recovery. They do not establish live notification delivery, authenticated Clerk/Convex behavior, assistive-technology behavior or physical-device validation. The assignment-notification producer and all other backend behavior are unchanged.
+
+### Non-modal popup keyboard behavior (M2)
+
+`useNonModalPopup` supplies focus entry, exit and dismissal to the account disclosure and Notification Center. Enter/Space retain native button activation. Opening focuses the first enabled action: profile editing in the account popup and Close in notifications. Both triggers expose `aria-expanded` and link to their open popup through `aria-controls`.
+
+Native Tab/Shift+Tab move through the popup's controls. Shift+Tab from the first control closes the popup and returns to its trigger; Tab from the final control closes it and continues to the next visible enabled control after the trigger in the page's tab order. This bridge gives the portaled notification panel a logical exit next to its trigger instead of jumping to the end of the document. Tab from an open trigger can re-enter its popup. Focus moving to another page control dismisses the popup without pulling focus back.
+
+Escape is handled while focus is within the popup or on its trigger, closes the popup, and restores trigger focus. The notification Close action and account backdrop also restore trigger focus. Outside pointer interactions with notifications preserve the clicked page control's normal action and focus. The account backdrop retains its click-away-only behavior and returns focus to its trigger. Account actions restore focus before invoking the existing navigation or Clerk callback, allowing that destination to take focus normally. Stable callbacks avoid resetting focus when account or notification query results update.
+
+These popups do not trap focus, set background inertness, or lock page scrolling. The account backdrop keeps its existing click-away behavior and appearance, while `tabIndex=-1` and `aria-hidden=true` exclude it from keyboard and assistive-technology navigation. All notification mutations and account callbacks retain their existing arguments and behavior.
+
+Edge browser fixtures use the actual App, account implementation and Notification Center with isolated service mocks at 1280×800, 820×1180 and 390×844. They cover keyboard opening, accessible relationships, Escape, trigger restoration, forward/reverse Tab and portal exit, click-away, outside focus, popup switching, loading/empty/error states, query updates, notification actions, account callbacks, and focus transfer into an H1 dialog. Screen-reader announcements, physical devices, other browser engines, and live Clerk/Convex interactions still require manual verification.
 
 ### Screen failures (H4)
 
@@ -412,7 +527,67 @@ These are proposed follow-ups only. They introduce no new values or implemented 
 - **Do** verify representative workspace, personal-task, profile, Kanban, notification, and dialog states in desktop/mobile browsers, with long Vietnamese content and browser zoom.
 - **Do** assess real text/background contrast and touch targets before declaring any accessibility standard met.
 - **Do** consider exposing personal-filter selection programmatically and associating inline field errors with inputs.
-- **Do** review notification-panel semantics and opening-focus behavior as one interaction.
+- **Do** verify notification/account popup announcements and focus transfers with assistive technologies and live authentication.
 - **Do** review reduced-motion cascade specificity and remaining animation coverage.
 - **Do** consider consolidating repeated colors and measurements only in a separately authorized implementation change, after checking feature-specific meaning.
 - **Don't** silently promote these recommendations into claims about the current application.
+
+
+## M10 Phase 1: shared design foundation
+
+This section supersedes earlier inventory statements about the absence of shared tokens. It describes an incremental consolidation, not a page redesign or whole-application accessibility certification. The palette, Inter family, navy navigation, blue actions and white surfaces are retained. New property names below reuse incumbent values; no new brand color, typeface, breakpoint or page spacing system is introduced.
+
+### Verified token roles
+
+All roles below are declared at :root in src/components/ui.css. Properties are written without their leading double hyphen in this table.
+
+| Category | Properties and resolved values | Incumbent source / adoption |
+| --- | --- | --- |
+| Surfaces | surface-page #f6f8fc; surface-default #ffffff; surface-subtle #f8faff; surface-hover #f1f5ff; surface-navigation #111d35; surface-backdrop #10203c99 | Shell, workspace fields, secondary actions; shell background/navigation values are aliases without geometric changes |
+| Text | text-primary #17243e; text-secondary #5e6d83; text-label #33435d; text-action-secondary #425273; text-inverse #ffffff | Existing confirmation, H2 supporting text, workspace labels and shared action colors |
+| Borders | border-default #dce2ec; border-subtle #e2e8f0; border-hover #b6c3ed | Existing secondary buttons and shared confirmations/error cards |
+| Actions | action-primary #4665e9; action-primary-hover #3453d7; action-danger #b91c1c | Existing action tokens; focus-ring remains an alias of action-primary |
+| Danger | surface-danger #fef2f2; surface-danger-hover #fee2e2; border-danger #fecaca; border-danger-hover #fca5a5; text-danger-strong #991b1b | Existing destructive buttons and error toasts |
+| Success | surface-success #f0fdf4; border-success #bbf7d0; text-success #166534 | Existing success toasts |
+| Corners | radius-control 9px; radius-panel 14px; radius-compact 12px; radius-dialog 16px | Existing button, list, toast/error-card and confirmation radii; action-radius aliases radius-control |
+| Elevation | shadow-panel none; shadow-toast 0 8px 30px #10203c26; shadow-dialog 0 24px 80px #10203c40 | Existing shared surface treatments; no new halo or feature-wide shadow normalization |
+| Typography | font-body Inter, system-ui, Arial, sans-serif; font-size-control 13px; font-size-caption 12px; font-size-body 14px; font-weight-label 700; font-weight-body 400; line-height-control 1.4; line-height-body 1.6 | Existing root family, shared actions, loading text and error-state paragraphs; no global font-size/line-height reset |
+| Shared spacing | space-tight 8px; space-content 12px; space-panel 16px; space-section 24px | Existing shared gaps, toast padding, navigation notices and confirmation action separation; page gutters/grids stay local |
+| Controls | control-height 40px; control-height-touch 44px; control-padding-block 9px; control-padding-inline 14px; control-disabled-opacity .55 | Existing shared button dimensions and disabled opacity; mobile threshold remains 760px |
+| Focus | focus-width 3px; focus-offset 3px; focus-ring #4665e9; focus-ring-legacy #a5b4fc | Existing search ring reused by opted-in buttons and fields; fields retain a 2px outline offset |
+
+### Reusable primitives and adoption
+
+- ui-button retains existing variants and dimensions. Hover and active styles use existing colors. Keyboard focus uses the stronger shared focus-ring instead of the pale legacy ring. aria-disabled controls keep their existing behavior and no longer receive enabled hover/active treatments. Native disabled states, aria-busy spinners, original callbacks and mutation arguments are unchanged. Reduced-motion specificity now matches the base button selector, so its transition override takes effect.
+- ui-form is an explicit styling opt-in on the existing ModalDialog wrapper and Profile form. Supported text/email/date/tel/URL/number fields, textareas and selects share border, white surface, 9px corners, text/placeholder colors, focus and disabled/error presentation. Native checkbox, radio, file and hidden controls are excluded from automatic field styling. Field values use the incumbent normal 400 weight and labels use 700. Padding, font sizes, widths, grid gaps and validation behavior remain feature-owned.
+- ui-field and ui-label provide the same opt-in presentation for future isolated fields/labels. They add no JavaScript, automatic error messages or validation rules. aria-invalid=true and browser user-invalid presentation use the existing danger color; focus retains a separate blue outline.
+- ui-card provides only a border, white surface, dark text, configurable radius and no shadow. ScreenErrorBoundary adopts it with card-radius set to radius-compact (12px); its margins, padding, safe messages and recovery behavior remain unchanged.
+- Shared confirmations, toasts and loading text consume tokens without changing placement, dimensions, timing or announcement roles. Passive toast content remains pointer-transparent, with pointer access confined to dismissal buttons.
+- Forced-colors mode uses the system Highlight outline for opted-in controls. Existing legacy button/select fallback selectors are retained, rather than replaced by a broad new reset.
+
+### Justified exceptions and boundaries
+
+Personal Tasks retains its metric order, toolbar, list, spacing, typography sizes and page geometry: M9 Phase 3 remains skipped. M9 Phase 1 workspace ordering/disclosure and Phase 2 Kanban ordering/deadline notices/subtask disclosures are preserved.
+
+Feature panels, project/task cards, status/priority colors, charts, account/notification popups and legacy fields remain local unless explicitly opted in. Profile cards retain their larger 20px radius and existing shadow; only Profile form fields/labels adopt the shared form contract. Modal containers retain their established 16/18px radii and padding. Floating notifications retain stronger elevation and their existing geometry. These are bounded migration exceptions, not evidence that every local value is a recommended token.
+
+The stronger selectors repeat only an explicit primitive class, following the existing ui-button approach to resist feature CSS import-order differences. No new global input, label, card or heading selector is introduced. Existing global fallback focus selectors are preserved for compatibility.
+
+### Validation scope
+
+Before/after fixtures use the actual Workspace, Kanban, Personal Tasks and Profile screens with service mocks at 1280x800 and 390x844. Captures and geometry records live under node_modules/.cache/design-foundation. Shared-control regression checks cover computed text/focus contrast, interaction states, fields, busy/disabled presentation, notifications, dialog focus and responsive overflow. This record distinguishes browser-fixture evidence from live Clerk/Convex integration, physical devices, other engines, real screen-reader announcements and guaranteed font delivery, which still require separate verification.
+
+
+Calculated token pairings use the WCAG sRGB relative-luminance formula; they do not substitute for whole-screen compliance testing:
+
+| Pairing | Contrast |
+| --- | ---: |
+| White text on action-primary | 4.89:1 |
+| White text on action-primary-hover | 6.24:1 |
+| text-primary on white | 15.46:1 |
+| text-secondary / placeholder on white | 5.26:1 |
+| text-secondary on surface-subtle | 5.04:1 |
+| Focus ring against white / surface-page | 4.89:1 / 4.59:1 |
+| action-danger on surface-danger | 5.91:1 |
+
+The old pale focus fallback is retained as focus-ring-legacy for controls not yet opted in; no improved contrast claim is made for those legacy rings. The confirmation backdrop and danger hover border also gain names without changing their existing rendered values.

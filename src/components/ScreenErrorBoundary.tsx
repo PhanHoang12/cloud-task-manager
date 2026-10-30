@@ -64,7 +64,7 @@ function FailureNotice({ error, scope, onRetry, onReturn, returnLabel, compact, 
   return <section
     ref={region}
     tabIndex={-1}
-    className={`ui-error-state${compact ? " ui-error-state-compact" : ""}`}
+    className={`ui-card ui-error-state${compact ? " ui-error-state-compact" : ""}`}
     role="alert"
     aria-labelledby={id + "-title"}
     aria-describedby={id + "-description"}
