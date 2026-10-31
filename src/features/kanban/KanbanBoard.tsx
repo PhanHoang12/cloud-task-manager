@@ -45,8 +45,8 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
   const [deadlineNoticeTarget, setDeadlineNoticeTarget] = useState<HTMLDivElement | null>(null);
   const linkedHeadingRef = useRef<HTMLHeadingElement>(null);
   const unavailableRef = useRef<HTMLDivElement>(null);
-  const handledNavigation = useRef<number | null>(null);
-  const [unavailableRequest, setUnavailableRequest] = useState<number | null>(null);
+  const handledNavigation = useRef<NotificationNavigation["requestId"] | null>(null);
+  const [unavailableRequest, setUnavailableRequest] = useState<NotificationNavigation["requestId"] | null>(null);
   const linkedTaskUnavailable = notificationNavigation !== undefined && unavailableRequest === notificationNavigation.requestId;
   const { notify, confirm } = useFeedback();
   const { run, pending } = useAction();

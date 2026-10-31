@@ -38,6 +38,8 @@ import ProfileSettings from "./features/profile/ProfileSettings";
 import NotificationCenter from "./features/kanban/NotificationCenter";
 import { resolveNotificationTarget, type NotificationTarget } from "./lib/notificationNavigation";
 import { formatDueDate, getErrorMessage } from "./lib/uiText";
+import { Navigate, Route, Routes, useLocation } from "react-router";
+import { appPaths } from "./lib/appRoutes";
 type Task=Doc<"tasks">;
 type Status=Task["status"];
 type Priority=Task["priority"];
@@ -200,9 +202,13 @@ function CloudTaskWorkspace() {
   const { userId } = useAuth();
   return <NavigationProvider key={userId ?? "authenticated"}><CloudTaskShell /></NavigationProvider>;
 }
+function UnknownRoute() {
+  const navigation = useAppNavigation()!;
+  return <div className="ws-page"><section className="ws-panel ws-empty" role="alert"><h1>Không tìm thấy trang</h1><p>Đường dẫn không hợp lệ. Hãy chọn một trang trong điều hướng hoặc về không gian làm việc.</p><button className="ui-button ui-secondary" onClick={() => navigation.go({ page: "workspace", workspaceId: null, projectId: null, notification: null })}>Về không gian làm việc</button></section></div>;
+}
 function CloudTaskShell() {
   const navigationState = useAppNavigation()!;
-  const { route, go } = navigationState;
+  const { route, go, location } = navigationState;
   const activePage = route.page;
   const client = useConvex();
   const notificationNavigation = route.notification;
@@ -248,6 +254,7 @@ function CloudTaskShell() {
     workspace: "Không gian và dự án",
     personal: "Công việc cá nhân",
     profile: "Hồ sơ cá nhân",
+    "not-found": "Không tìm thấy trang",
   }[activePage];
 
   return (
@@ -312,9 +319,16 @@ function CloudTaskShell() {
             returnLabel={activePage === "workspace" ? "Về công việc cá nhân" : "Về không gian làm việc"}
             allowReload
           >
-            {activePage === "personal" && <TaskDashboard />}
-            {activePage === "workspace" && <WorkspaceManager />}
-            {activePage === "profile" && <ProfileSettings />}
+            {/* Accepted entries discard local forms; cancelled POP keeps this key mounted. */}
+            <Routes key={location.key} location={location}>
+              <Route path="/" element={<Navigate to={appPaths.workspaces} replace />} />
+              <Route path={appPaths.personal} element={<TaskDashboard />} />
+              <Route path={appPaths.workspaces} element={<WorkspaceManager />} />
+              <Route path={appPaths.workspace} element={activePage === "not-found" ? <UnknownRoute /> : <WorkspaceManager />} />
+              <Route path={appPaths.project} element={activePage === "not-found" ? <UnknownRoute /> : <WorkspaceManager />} />
+              <Route path={appPaths.profile} element={<ProfileSettings />} />
+              <Route path="*" element={<UnknownRoute />} />
+            </Routes>
           </ScreenErrorBoundary>
         </div>
       </div>
@@ -335,6 +349,6 @@ function AuthConnectionNotice() {
  </section></div>;
 }
 
-export default function App(){const {isLoaded,isSignedIn}=useAuth();if(!isLoaded)return <div className="auth-loading">Đang tải phiên đăng nhập...</div>;return <><AuthLoading><div className="auth-loading">Đang xác thực phiên đăng nhập...</div></AuthLoading><Unauthenticated>{isSignedIn?<AuthConnectionNotice/>:<div className="landing"><div className="landing-card"><div className="landing-logo"><Cloud size={32}/></div><div className="eyebrow">QUẢN LÝ CÔNG VIỆC TRỰC TUYẾN</div><h1>Công việc rõ ràng.<br/><span>Tiến độ vượt trội.</span></h1><p>Quản lý công việc cá nhân và dự án nhóm, theo dõi tiến độ và nhận nhắc hạn trong cùng một nơi.</p><div className="landing-actions"><SignUpButton mode="modal"><button className="primary ui-button ui-primary">Tạo tài khoản <Plus size={17}/></button></SignUpButton><SignInButton mode="modal"><button className="secondary ui-button ui-secondary">Đăng nhập</button></SignInButton></div><small>Công việc cá nhân · Dự án nhóm · Nhắc hạn tự động</small></div></div>}</Unauthenticated><Authenticated><ScreenErrorBoundary scope="Ứng dụng" allowReload><CloudTaskWorkspace /></ScreenErrorBoundary></Authenticated></>}
+export default function App(){const {isLoaded,isSignedIn}=useAuth();const location=useLocation();const returnTo=location.pathname.startsWith("//")?appPaths.workspaces:location.pathname+location.search+location.hash;if(!isLoaded)return <div className="auth-loading">Đang tải phiên đăng nhập...</div>;return <><AuthLoading><div className="auth-loading">Đang xác thực phiên đăng nhập...</div></AuthLoading><Unauthenticated>{isSignedIn?<AuthConnectionNotice/>:<div className="landing"><div className="landing-card"><div className="landing-logo"><Cloud size={32}/></div><div className="eyebrow">QUẢN LÝ CÔNG VIỆC TRỰC TUYẾN</div><h1>Công việc rõ ràng.<br/><span>Tiến độ vượt trội.</span></h1><p>Quản lý công việc cá nhân và dự án nhóm, theo dõi tiến độ và nhận nhắc hạn trong cùng một nơi.</p><div className="landing-actions"><SignUpButton mode="modal" forceRedirectUrl={returnTo}><button className="primary ui-button ui-primary">Tạo tài khoản <Plus size={17}/></button></SignUpButton><SignInButton mode="modal" forceRedirectUrl={returnTo}><button className="secondary ui-button ui-secondary">Đăng nhập</button></SignInButton></div><small>Công việc cá nhân · Dự án nhóm · Nhắc hạn tự động</small></div></div>}</Unauthenticated><Authenticated><ScreenErrorBoundary scope="Ứng dụng" allowReload><CloudTaskWorkspace /></ScreenErrorBoundary></Authenticated></>}
 
 

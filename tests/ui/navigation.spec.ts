@@ -55,7 +55,8 @@ test("M4 Back and Forward restore screen and project context without storing dra
   await page.goBack(); await expect(page.getByLabel("Không gian đang chọn")).toHaveValue("workspace-b");
   await page.goForward(); await expect(page.locator(".kb-page")).toBeVisible();
   const serialized = await page.evaluate(() => JSON.stringify({ state: history.state, local: { ...localStorage }, session: { ...sessionStorage }, url: location.href }));
-  expect(serialized).not.toMatch(/workspace-b|project-b|Sinh viên|student@example|fullName/);
+  expect(serialized).not.toMatch(/Sinh viên|student@example|fullName/);
+  await expect(page).toHaveURL(/\/workspaces\/workspace-b\/projects\/project-b$/);
 });
 for (const kind of ["personal", "workspace", "project", "kanban"] as const) {
   test("M4 dirty " + kind + " dialog cancels dismissal and restores H1 focus after discard", async ({ page }) => {
@@ -98,7 +99,7 @@ test("M4 profile draft survives realtime updates and cancelled Back; discard all
   await expect(page.getByLabel("Họ và tên")).toHaveValue("Tên riêng chưa lưu");
   page.once("dialog", dialog => dialog.dismiss()); await page.goBack();
   await expect(page.getByLabel("Họ và tên")).toHaveValue("Tên riêng chưa lưu");
-  await expect.poll(() => page.evaluate(() => history.state.cloudTaskNavigation.index)).toBe(2);
+  await expect(page).toHaveURL(/\/profile$/);
   page.once("dialog", dialog => dialog.accept()); await page.goBack();
   await expect(page.locator(".personal-dashboard")).toBeVisible();
   await page.goForward(); await expect(page.getByLabel("Họ và tên")).toHaveValue("Tên cập nhật từ máy khác");
@@ -198,7 +199,7 @@ test("M4 Back from a dirty task dialog preserves native modality when cancelled"
   await modal.locator("input").first().fill("Bản nháp lịch sử");
   page.once("dialog", dialog => dialog.dismiss()); await page.goBack();
   await expect(modal).toBeVisible(); await expect(modal.locator("input").first()).toHaveValue("Bản nháp lịch sử");
-  await expect.poll(() => page.evaluate(() => history.state.cloudTaskNavigation.index)).toBe(1);
+  await expect(page).toHaveURL(/\/personal$/);
   await page.keyboard.press("Tab"); expect(await modal.evaluate(element => element.contains(document.activeElement))).toBe(true);
   page.once("dialog", dialog => dialog.accept()); await page.goBack();
   await expect(modal).toHaveCount(0); await expect(page.getByRole("heading", { name: "Không gian làm việc", exact: true })).toBeVisible();
@@ -220,6 +221,8 @@ test("M4 an identity change clears prior account navigation and filters in memor
   await page.goto(fixture); await board(page); await navigate(page, "personal");
   await page.getByLabel("Tìm công việc", { exact: true }).fill("Từ khóa riêng của tài khoản trước");
   await page.evaluate(() => window.experienceRegression.switchIdentity());
+  await expect(page.locator(".personal-dashboard")).toBeVisible();
+  await navigate(page, "workspace");
   await expect(page.getByRole("heading", { name: "Không gian làm việc", exact: true })).toBeVisible();
   await expect(page.getByLabel("Không gian đang chọn")).toHaveValue("workspace-a");
   await navigate(page, "personal");

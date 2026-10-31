@@ -1,7 +1,7 @@
 import type { Id } from "../../convex/_generated/dataModel";
 
 export type NotificationTarget = { projectId: Id<"projects">; taskId?: Id<"projectTasks"> };
-export type NotificationNavigation = NotificationTarget & { workspaceId: Id<"workspaces">; requestId: number };
+export type NotificationNavigation = NotificationTarget & { workspaceId: Id<"workspaces">; requestId: number | string };
 
 function identifier(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && value.trim() === value;

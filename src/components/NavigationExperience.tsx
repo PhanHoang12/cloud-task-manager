@@ -1,14 +1,7 @@
-import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { createPath, useLocation, useNavigate, useNavigationType, type Location } from "react-router";
 import type { Id } from "../../convex/_generated/dataModel";
-import type { NotificationNavigation } from "../lib/notificationNavigation";
-
-export type AppRoute = {
-  page: "workspace" | "personal" | "profile";
-  workspaceId: Id<"workspaces"> | null;
-  projectId: Id<"projects"> | null;
-  notification: NotificationNavigation | null;
-};
-const initialRoute: AppRoute = { page: "workspace", workspaceId: null, projectId: null, notification: null };
+import { routeFromLocation, routePath, type AppRoute } from "../lib/appRoutes";
 const discardMessage = "Bạn có thay đổi chưa lưu. Rời khỏi đây sẽ bỏ các thay đổi này. Bạn có muốn tiếp tục?";
 export function confirmDiscard(dirty: boolean, busy = false) {
   return !busy && (!dirty || window.confirm(discardMessage));
@@ -41,22 +34,29 @@ type Navigation = {
   clearNotice: () => void;
   guards: Map<symbol, Guard>;
   views: ViewStore;
+  location: Location;
 };
 const NavigationContext = createContext<Navigation | null>(null);
 export const useAppNavigation = () => useContext(NavigationContext);
 
-/** Only a random entry token/index enters history.state. Context and filters stay in this mounted session. */
+/** BrowserRouter owns history. Only filters and the last workspace destination stay in memory. */
 export function NavigationProvider({ children }: { children: ReactNode }) {
-  const [route, setRoute] = useState(initialRoute);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navigationType = useNavigationType();
+  const [accepted, setAccepted] = useState(location);
+  const acceptedIndex = useRef<number | null>(window.history.state?.idx ?? null);
+  const returning = useRef(false);
+  // Declarative BrowserRouter has no useBlocker. Keep the existing screen mounted
+  // during POP confirmation, then use only router navigation to accept or return.
+  const visibleLocation = navigationType === "POP" ? accepted : location;
+  const route = useMemo(() => routeFromLocation(visibleLocation), [visibleLocation]);
   const current = useRef(route);
+  current.current = route;
+  const lastWorkspace = useRef<Pick<AppRoute, "workspaceId" | "projectId">>({ workspaceId: null, projectId: null });
   const [notice, setNotice] = useState("");
   const [views] = useState(createViewStore);
   const guards = useRef(new Map<symbol, Guard>());
-  const session = useRef(crypto.randomUUID());
-  const index = useRef(0);
-  const serial = useRef(0);
-  const entries = useRef(new Map<string, AppRoute>());
-  const restoring = useRef(false);
   const clearNotice = useCallback(() => setNotice(""), []);
   const allowLeave = useCallback(() => {
     const active = [...guards.current.values()];
@@ -68,51 +68,42 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     if (allowed) setNotice("");
     return allowed;
   }, []);
-  function writeHistory(next: AppRoute, replace: boolean) {
-    const key = String(++serial.current);
-    if (!replace) index.current++;
-    entries.current.set(key, next);
-    const previous = history.state && typeof history.state === "object" ? history.state : {};
-    history[replace ? "replaceState" : "pushState"]({
-      ...previous, cloudTaskNavigation: { session: session.current, key, index: index.current },
-    }, "");
-  }
   const go = useCallback((patch: Partial<AppRoute>) => {
-    if (restoring.current) return false;
-    const next = { ...current.current, ...patch };
-    if (next.page === current.current.page && next.workspaceId === current.current.workspaceId &&
-      next.projectId === current.current.projectId && next.notification === current.current.notification) return true;
+    if (returning.current) return false;
+    const base = patch.page === "workspace" && current.current.page !== "workspace" ?
+      { ...current.current, ...lastWorkspace.current } : current.current;
+    const next = { ...base, ...patch };
+    if (routePath(next) === createPath(visibleLocation) && !patch.notification) return true;
     if (!allowLeave()) return false;
-    writeHistory(next, false);
-    current.current = next;
-    setRoute(next);
+    void navigate(routePath(next), { state: patch.notification ? { focusProject: !patch.notification.taskId } : null });
     return true;
-  }, [allowLeave]);
+  }, [allowLeave, navigate, visibleLocation]);
   const adoptWorkspace = useCallback((id: Id<"workspaces">) => {
     if (current.current.page !== "workspace" || current.current.workspaceId !== null) return;
     const next = { ...current.current, workspaceId: id };
-    writeHistory(next, true); current.current = next; setRoute(next);
-  }, []);
+    void navigate(routePath(next), { replace: true });
+  }, [navigate]);
   useLayoutEffect(() => {
-    writeHistory(current.current, true);
-    function onPop(event: PopStateEvent) {
-      if (restoring.current) { restoring.current = false; return; }
-      const entry = event.state?.cloudTaskNavigation;
-      const next = entry?.session === session.current ? entries.current.get(entry.key) : undefined;
-      if (!next || !Number.isInteger(entry.index)) return;
-      if (!allowLeave()) {
-        const distance = index.current - entry.index;
-        if (distance) { restoring.current = true; history.go(distance); }
-        return;
+    if (location.key === accepted.key) { returning.current = false; return; }
+    const nextIndex = window.history.state?.idx;
+    if (navigationType === "POP" && !returning.current && !allowLeave()) {
+      returning.current = true;
+      if (typeof nextIndex === "number" && acceptedIndex.current !== null && nextIndex !== acceptedIndex.current) {
+        void navigate(acceptedIndex.current - nextIndex);
+      } else {
+        // An entry created outside the router has no router index.
+        void navigate(createPath(accepted), { replace: true, state: accepted.state });
       }
-      index.current = entry.index;
-      current.current = next;
-      setRoute(next);
+      return;
     }
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, [allowLeave]);
-  return <NavigationContext.Provider value={{ route, go, allowLeave, adoptWorkspace, clearNotice, guards: guards.current, views }}>
+    returning.current = false;
+    acceptedIndex.current = typeof nextIndex === "number" ? nextIndex : null;
+    setAccepted(location);
+  }, [location, accepted, navigationType, navigate, allowLeave]);
+  useLayoutEffect(() => {
+    if (route.page === "workspace") lastWorkspace.current = { workspaceId: route.workspaceId, projectId: route.projectId };
+  }, [route]);
+  return <NavigationContext.Provider value={{ route, go, allowLeave, adoptWorkspace, clearNotice, guards: guards.current, views, location: visibleLocation }}>
     {notice && <p className="ui-navigation-notice" role="status">{notice}</p>}
     {children}
   </NavigationContext.Provider>;

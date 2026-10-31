@@ -3,6 +3,9 @@ import { useEffect, useSyncExternalStore } from "react";
 const params = new URLSearchParams(location.search);
 const mode = params.get("target");
 let activeUserId = "user-fixture";
+let authLoaded = params.get("auth") !== "loading";
+let signedIn = params.get("auth") !== "signed-out";
+let convexLoading = params.get("auth") === "convex-loading";
 let notificationQueryError = mode === "query-error";
 const now = Date.now(), userId = "user-fixture";
 const wa = { _id: "workspace-a", name: "Nhóm một", description: "", myRole: "owner" };
@@ -53,6 +56,8 @@ declare global { interface Window { experienceRegression: {
   changeRole: () => void;
   profileUpdate: () => void;
   completeSave: () => void;
+  setAuthState: (state: "loading" | "signed-out" | "convex-loading" | "signed-in") => void;
+  signInReturnTo?: string;
 }; } }
 let revision = 0, sequence = 0;
 const listeners = new Set<() => void>();
@@ -69,6 +74,10 @@ declare global {
   }
 }
 window.experienceRegression = {
+  setAuthState: state => {
+    authLoaded = state !== "loading"; signedIn = state !== "signed-out";
+    convexLoading = state === "convex-loading"; notify();
+  },
   setLoading: (names, active) => { for (const name of names) active ? loading.add(name) : loading.delete(name); notify(); },
   activeQueries: {}, signOutCalls: 0,
   switchIdentity: () => { activeUserId = "other-fixture"; workspaces = [wa]; personalTasks = []; notifications = []; account = { clerk: { name: "Tài khoản khác", email: "other@example.invalid" }, profile: { fullName: "Tài khoản khác" } }; notify(); },
@@ -165,12 +174,26 @@ export function useMutation(reference: Reference) {
   });
   return mutations.get(name)!;
 }
-export const useUser = () => ({ user: { id: userId, fullName: member.fullName, firstName: "Sinh viên" } });
+export const useUser = () => ({ user: { id: activeUserId, fullName: member.fullName, firstName: "Sinh viên" } });
 export const useAuth = () => {
   useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, () => revision);
-  return { userId: activeUserId, isLoaded: true, isSignedIn: true, getToken: async () => null };
+  return { userId: signedIn ? activeUserId : null, isLoaded: authLoaded, isSignedIn: signedIn, getToken: async () => null };
 };
 export const useClerk = () => ({ openUserProfile: () => {}, signOut: async () => { window.experienceRegression.signOutCalls++; } });
-export const SignInButton = ({ children }: { children: unknown }) => children;
-export const SignUpButton = SignInButton, SignOutButton = SignInButton, Authenticated = SignInButton;
-export const Unauthenticated = () => null, AuthLoading = () => null;
+export const SignInButton = ({ children, forceRedirectUrl }: { children: unknown; forceRedirectUrl?: string }) => {
+  window.experienceRegression.signInReturnTo = forceRedirectUrl;
+  return children;
+};
+export const SignUpButton = SignInButton, SignOutButton = SignInButton;
+function useAuthSnapshot() {
+  useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, () => revision);
+}
+export const Authenticated = ({ children }: { children: unknown }) => {
+  useAuthSnapshot(); return authLoaded && signedIn && !convexLoading ? children : null;
+};
+export const Unauthenticated = ({ children }: { children: unknown }) => {
+  useAuthSnapshot(); return authLoaded && !signedIn && !convexLoading ? children : null;
+};
+export const AuthLoading = ({ children }: { children: unknown }) => {
+  useAuthSnapshot(); return authLoaded && convexLoading ? children : null;
+};
