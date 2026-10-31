@@ -9,7 +9,7 @@ colors:
   action-danger: "#b91c1c"
   ws-ink: "#17243e"
   ws-muted: "#5e6d83"
-  ws-blue: "#4866ef"
+  ws-blue: "#4665e9"
   wo-ink: "#17243e"
   wo-muted: "#5e6d83"
   surface-page: "#f6f8fc"
@@ -46,7 +46,7 @@ rounded:
 
 ## Overview
 
-This record began with a source inventory on 29 October 2026. **Verified source** means found in React or CSS, including local overrides; it does not by itself mean observed in a browser. Subsequent H1–H4 and toast-regression sections identify targeted browser-fixture evidence separately. Authenticated workflows, physical devices, font delivery, and assistive-technology behavior remain unverified by those fixtures. No accessibility compliance is claimed.
+This record began with a source inventory on 29 October 2026. **Verified source** means found in React or CSS, including local overrides; it does not by itself mean observed in a browser. Subsequent H1–H4 and toast-regression sections identify targeted browser-fixture evidence separately. Authenticated workflows, physical devices, font delivery, and assistive-technology behavior remain unverified by those fixtures. No accessibility compliance is claimed. Original inventory tables are historical where superseded by the M10 adoption sections; Phase 2 below is the current presentation contract.
 
 The implemented interface uses a dark navy navigation area, pale cool page backgrounds, white bordered panels, blue action buttons, rounded corners, and compact Vietnamese labels. Cards organize projects and statistics; lists organize personal work and members. Shadows are generally subtle on content and stronger on floating surfaces. These are descriptive observations, not a newly chosen visual direction.
 
@@ -502,7 +502,7 @@ Reduced-motion handling is partial:
 
 - Shared button spinner animation is removed under reduced motion.
 - Donut/bar transitions, member disclosure-chevron transitions, and discussion-entry animation have targeted reduced-motion rules.
-- The reduced-motion rule for shared button transitions uses `.ui-button`, which is less specific than the base `.ui-button.ui-button`; it does not override that base transition. The overview metric transition similarly uses the more specific `button.wo-metric` than its reduced-motion override.
+- M10 Phase 1 corrected shared-button reduced-motion specificity. The overview metric transition similarly uses the more specific `button.wo-metric` than its reduced-motion override.
 - Sidebar hover movement, account/notification effects, discussion-chevron rotation, subtask progress, automation progress, and the automation loading spinner do not have complete reduced-motion coverage in the inspected styles.
 
 Small metadata sizes, muted text, compact controls outside the shared button family, focus visibility, contrast, announcements, table scrolling, modal behavior, and zoom/reflow still need rendered and assistive-technology testing. Source attributes alone do not prove usability or WCAG conformance.
@@ -569,7 +569,7 @@ All roles below are declared at :root in src/components/ui.css. Properties are w
 
 Personal Tasks retains its metric order, toolbar, list, spacing, typography sizes and page geometry: M9 Phase 3 remains skipped. M9 Phase 1 workspace ordering/disclosure and Phase 2 Kanban ordering/deadline notices/subtask disclosures are preserved.
 
-Feature panels, project/task cards, status/priority colors, charts, account/notification popups and legacy fields remain local unless explicitly opted in. Profile cards retain their larger 20px radius and existing shadow; only Profile form fields/labels adopt the shared form contract. Modal containers retain their established 16/18px radii and padding. Floating notifications retain stronger elevation and their existing geometry. These are bounded migration exceptions, not evidence that every local value is a recommended token.
+Feature panels, project/task cards, status/priority colors, charts, account/notification popups and legacy fields remain local unless explicitly opted in. Phase 2 now migrates Profile cards to radius-panel and shadow-panel; Profile fields/labels keep the shared ui-form contract. Phase 2 uses radius-dialog for modal containers while preserving their original padding and dimensions. Floating notifications retain stronger elevation and their existing geometry. These are bounded migration exceptions, not evidence that every local value is a recommended token.
 
 The stronger selectors repeat only an explicit primitive class, following the existing ui-button approach to resist feature CSS import-order differences. No new global input, label, card or heading selector is introduced. Existing global fallback focus selectors are preserved for compatibility.
 
@@ -591,3 +591,61 @@ Calculated token pairings use the WCAG sRGB relative-luminance formula; they do 
 | action-danger on surface-danger | 5.91:1 |
 
 The old pale focus fallback is retained as focus-ring-legacy for controls not yet opted in; no improved contrast claim is made for those legacy rings. The confirmation backdrop and danger hover border also gain names without changing their existing rendered values.
+
+
+## M10 Phase 2: feature adoption and visual consistency
+
+Implemented sequentially: A workspace/project overview and members; B Kanban, subtasks, discussions and automation; C Personal Tasks, Profile, navigation and notifications. This section supersedes older feature-local color, radius and shadow inventories where the rules below apply.
+
+### Current component patterns
+
+| Role | Current adoption | Geometry preserved |
+| --- | --- | --- |
+| Working surfaces | White surface-default, border-subtle, radius-panel (14px), shadow-panel (none) on workspace/project panels, member directory, project/task cards, Kanban lanes' corners, overview/automation panels, personal statistics/list and Profile cards | Grid columns, lane backgrounds, order, widths, padding, margins, minimum heights, overflow and breakpoints |
+| Compact embedded surfaces | radius-compact (12px) remains for compact summary tiles and discussion composers; native subtask disclosures retain their flat card-divider treatment | Existing expansion, drafts, editors, progress and count placement |
+| Floating surfaces | radius-dialog (16px) and shadow-dialog for modal containers; shadow-toast for account, member and notification popups | Native modality, portal placement, z-index, viewport bounds, Tab/Escape behavior and trigger restoration |
+| Text hierarchy | text-primary and text-secondary replace repeated neutral literals; exact existing 12/13/14px sizes, 400/700 weights and 1.4/1.6 line heights consume Phase 1 tokens where equal | Page heading sizes, other weights, line heights and text wrapping remain unchanged |
+| Spacing | Existing 8/12/16/24px values consume space-tight/content/panel/section | Values are aliases, not a spacing redesign; 10/14/20px and other local measurements remain where changing them would move content |
+| Fields/actions | Native controls adopt border-default, radius-control and the existing blue action/focus role without adopting shared button dimensions | Existing control sizes, native controls, validation and all operations; Profile's redundant field border/color/focus declarations were removed because ui-form already owns them |
+| Feedback | Error/success messages reuse shared surface/text roles; selected small blue labels use action-primary-hover for contrast against pale blue fills | Message text, announcements, timing, dismissal and busy/disabled behavior |
+| Status meaning | Green completion text uses text-success, red personal priorities and the unread-count fill use action-danger, amber priority/count text reuses incumbent #935e10 | Status labels, tinted backgrounds, task states, chart series, unread count, roles and immutable identifiers |
+
+No new root tokens, dependencies, React behavior, queries or backend changes were introduced in Phase 2. Existing ws-ink/wo-ink aliases now read text-primary, and ws-blue aliases action-primary. No source JSX or Vietnamese labels changed.
+
+### Intentional exceptions and skipped changes
+
+- Navy navigation colors, active markers, brand tile treatment and 13px navigation corners remain the established identity; light-content text roles are not applied to navy surfaces.
+- Page heading sizes, unusual intermediate font weights, control dimensions and all nonmatching spacing values remain local to prevent wrapping or layout changes. This is visual adoption, not a new page/type scale.
+- Meaningful chart and status palettes, circular avatars/badges, and the asymmetric comment bubble retain their contextual shapes/colors. The existing amber warning foreground #935e10 stays local because Phase 1 defines no warning token.
+- Unrelated unused legacy navigation selectors and entry-surface composition were not redesigned. Their geometry and dark-surface text colors remain intact.
+- Checkbox/file input affordances, drag-and-drop logic, notification destinations, author resolution, permissions, native dialog focus management and popup semantics are untouched.
+- Existing feature animation behavior remains; comprehensive motion redesign and assistive-technology certification are not claimed.
+- Restricted automation-history styling is source-inspected, but the fixture does not expose an authorized history table. Privileged member-management popovers and authenticated history still need live smoke checks.
+
+### Evidence and regression scope
+
+Capture sets in node_modules/.cache/visual-consistency include before, after-A, after-B and after-C images and geometry JSON at 1280x800, 820x1180 and 390x844. comparison.html groups the before/final pairs by phase and viewport. The comparison checks document coordinates and dimensions of workspace actions/cards, analytics, dialogs, Kanban lanes/cards, expanded editors, personal metrics/toolbars/list, Profile and both popups. The final measured maximum delta was 0px in the captured states; this is not a claim about every possible content length or device.
+
+Phase A passed 19 focused checks. Phase B passed 68 focused workflow checks plus six added phase-specific contrast/focus checks. Phase C passed 19 focused checks, including the earlier foundation geometry and popup regressions. visual-consistency.spec.ts adds nine permanent regressions across all three viewports for neutral surfaces, tinted labels, input focus without size changes, task/discussion metadata, automation, personal priorities and notification counts.
+
+Fixtures mount the real React screens with browser-only service mocks. They do not prove live Clerk sessions, Convex delivery/authorization, physical touch dragging, other browser engines or screen-reader announcements. The final build/unit/full-suite outcome is reported with the change.
+
+
+Final Phase 2 validation: npm run build passed (the existing large-chunk warning remains); npm test passed 57 tests; npm run test:ui passed all 414 tests, including the nine new visual-consistency regressions. Native notification-row, board-return/error and history-scroll focus treatments use the existing stronger focus token without changing geometry. The screenshot gallery and detailed changed-file report are node_modules/.cache/visual-consistency/comparison.html and REPORT.md. No deployment or merge was performed.
+
+## Final restrained visual polish — 31 October 2026
+
+This pass starts from the existing, uncommitted M10 Phase 2 implementation. It changes only app-layout.css, workspace.css, workspace-overview.css and kanban.css, plus this record. Existing changes in other files are preserved.
+
+- Unselected workspace summary tiles use border-subtle instead of category-tinted borders. The blue selected treatment and semantic chart/status colors remain.
+- Kanban lanes use surface-hover instead of the darker local blue-gray fill, allowing white task cards and status markers to carry the hierarchy.
+- Project/task card hover and focus-within use border-hover without lifting, shadows or dimension changes. Project-open, board-history and edit controls gain the existing secondary hover colors; the analytics disclosure gains a subtle hover surface.
+- Sidebar hover retains its navy/white colors without horizontal translation. The account trigger transitions only background and border; both controls respect reduced motion.
+
+No tokens, typography sizes, spacing, layouts, React behavior, backend code, authentication or deployment configuration change. Personal Tasks, Profile, dialogs, notifications and member surfaces were left as already consistent. H1–H4, M1–M5 and M9 are preserved.
+
+Fresh before/after captures cover workspace, expanded analytics, workspace dialog, Kanban, expanded editors, Personal Tasks, Profile, notifications and account menu at 1280×800, 820×1180 and 390×844. The maximum delta across 336 position/dimension comparisons is 0px. The local review gallery is node_modules/.cache/visual-consistency/polish-comparison.html; matching images and geometry files use polish-before and polish-after prefixes. These cached artifacts are not committed.
+
+Browser fixtures use real React screens with service mocks. Live Clerk/Convex integration, physical touch devices, other engines, screen-reader announcements and reliable external font delivery remain outside this validation. The original test configuration is retained; an attempted offline-font run was discarded because fallback fonts changed the historical geometry baseline.
+
+Final validation for this polish pass: npm run build passed with the existing >500 kB bundle warning; npm test passed 57 tests; the original npm run test:ui configuration passed all 414 tests (exit 0). The test-owned Vite process needed an explicit stop after all cases passed to unblock Windows runner teardown. No source test configuration changes remain from this pass. No commit, merge or deployment was performed.

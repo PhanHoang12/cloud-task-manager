@@ -1,12 +1,12 @@
 
 .ah-card {
   margin-top: 22px;
-  padding: 24px;
-  border: 1px solid #e0e7f1;
-  border-radius: 20px;
-  background: #fff;
-  color: #14233b;
-  box-shadow: 0 8px 30px rgba(24, 43, 80, 0.05);
+  padding: var(--space-section);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  background: var(--surface-default);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-panel);
 }
 
 .ah-header {
@@ -14,14 +14,14 @@
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-panel);
   margin-bottom: 22px;
 }
 
 .ah-eyebrow {
   display: block;
-  margin-bottom: 8px;
-  color: #6479a0;
+  margin-bottom: var(--space-tight);
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.3px;
@@ -30,14 +30,14 @@
 .ah-header h3 {
   margin: 0;
   font-size: 22px;
-  color: #14233b;
+  color: var(--text-primary);
 }
 
 .ah-muted {
-  margin: 8px 0 0;
-  color: #64748b;
-  font-size: 13px;
-  line-height: 1.6;
+  margin: var(--space-tight) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-control);
+  line-height: var(--line-height-body);
 }
 
 .ah-realtime {
@@ -46,14 +46,14 @@
   border-radius: 999px;
   background: #effdf5;
   color: #16834b;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-label);
 }
 
 .ah-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--space-content);
   margin-bottom: 20px;
 }
 
@@ -64,57 +64,59 @@
   gap: 10px;
   min-width: 0;
   padding: 17px;
-  background: #f7f9fd;
-  border: 1px solid #e7edf5;
-  border-radius: 14px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
 }
 
 .ah-summary > div > span:first-child {
-  color: #64748b;
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-caption);
 }
 
 .ah-summary strong {
   font-size: 15px;
-  color: #1e2b42;
+  color: var(--text-primary);
   overflow-wrap: anywhere;
 }
 
 .ah-table-wrap {
   width: 100%;
   overflow-x: auto;
-  border: 1px solid #e6ebf3;
-  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
 }
+
+.ah-table-wrap:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: 2px; }
 
 .ah-table {
   width: 100%;
   min-width: 950px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--font-size-control);
 }
 
 .ah-table th,
 .ah-table td {
   padding: 14px 13px;
   text-align: left;
-  border-bottom: 1px solid #edf1f6;
+  border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
 }
 
 .ah-table th {
   background: #f5f8fd;
-  color: #63738d;
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-caption);
   font-weight: 750;
 }
 
 .ah-table td {
-  color: #31415a;
+  color: var(--text-primary);
 }
 
 .ah-table tbody tr:hover {
-  background: #f8faff;
+  background: var(--surface-subtle);
 }
 
 .ah-table tbody tr:last-child td {
@@ -132,7 +134,7 @@
 
 .ah-status--completed {
   background: #e5f8ed;
-  color: #148453;
+  color: var(--text-success);
 }
 
 .ah-status--running {
@@ -160,14 +162,14 @@
 .ah-empty {
   padding: 25px;
   text-align: center;
-  color: #7b8798;
+  color: var(--text-secondary);
 }
 
 .ah-footnote {
-  margin: 16px 0 0;
-  color: #8490a4;
+  margin: var(--space-panel) 0 0;
+  color: var(--text-secondary);
   font-size: 11px;
-  line-height: 1.6;
+  line-height: var(--line-height-body);
 }
 
 @media (max-width: 850px) {
@@ -178,7 +180,7 @@
 
 @media (max-width: 480px) {
   .ah-card {
-    padding: 16px;
+    padding: var(--space-panel);
   }
 
   .ah-header h3 {
