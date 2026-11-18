@@ -19,6 +19,8 @@ import { getErrorMessage, roleLabels } from "../../lib/uiText";
 import type { NotificationNavigation } from "../../lib/notificationNavigation";
 import PagePhoto from "../../components/PagePhoto";
 import CardIllustration from "../../components/CardIllustration";
+import CollectionToolbar from "../../components/CollectionToolbar";
+import { projectResults, type ProjectSort } from "../../lib/collectionFilters";
 
 type Modal = "workspace" | "project" | null;
 type ProjectStatus = "active" | "completed" | "archived";
@@ -64,6 +66,8 @@ export default function WorkspaceManager({ initialNotification }: { initialNotif
   const [search, setSearch] = useViewState("workspace:" + workspaceId + ":search", "");
   const [statusFilter, setStatusFilter] = useViewState<StatusFilter>("workspace:" + workspaceId + ":status", "all");
   const [monthFilter, setMonthFilter] = useViewState<string | null>("workspace:" + workspaceId + ":month", null);
+  const [sort, setSort] = useViewState<ProjectSort>("workspace:" + workspaceId + ":sort", "newest");
+  const projectMonths = useMemo(() => [...new Set((projects ?? []).map(project => projectMonthKey(project._creationTime)))].sort().reverse(), [projects]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const dismissDraft = useDraftGuard(modal !== null && (name !== "" || description !== ""), busy || pending !== null);
@@ -71,12 +75,8 @@ export default function WorkspaceManager({ initialNotification }: { initialNotif
   const canCreateProject = activeWorkspace?.myRole !== "viewer";
   const canManageProject = activeWorkspace?.myRole === "owner" || activeWorkspace?.myRole === "admin";
   const visibleProjects = useMemo(
-    () => (projects ?? []).filter((project) =>
-      `${project.name} ${project.description}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) &&
-      (statusFilter === "all" || project.status === statusFilter) &&
-      (!monthFilter || projectMonthKey(project._creationTime) === monthFilter)
-    ),
-    [projects, search, statusFilter, monthFilter]
+    () => projectResults(projects ?? [], search, statusFilter, sort).filter(project => !monthFilter || projectMonthKey(project._creationTime) === monthFilter),
+    [projects, search, statusFilter, monthFilter, sort]
   );
 
 
@@ -178,7 +178,12 @@ export default function WorkspaceManager({ initialNotification }: { initialNotif
               <div><h2>Projects</h2></div>
               {canCreateProject && <button type="button" className="ws-btn ui-button ui-primary" onClick={() => openModal("project")}><Plus size={17}/> New project</button>}
             </div>
-            <div className="ws-search"><Search size={18}/><input aria-label="Search projects" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects by name or description..." /></div>
+            <CollectionToolbar scope="projects" disabled={projects === undefined} activeCount={Number(statusFilter !== "all") + Number(Boolean(monthFilter)) + Number(Boolean(search.trim()))}
+              sort={sort} onSort={value => setSort(value as ProjectSort)} sortOptions={[{value:"newest",label:"Newest first"},{value:"oldest",label:"Oldest first"},{value:"name",label:"Name A–Z"}]}
+              search={<div className="ws-search"><Search size={18}/><input aria-label="Search projects" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects by name or description..." /></div>}>
+              <label>Project status<select aria-label="Filter projects by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value as StatusFilter)}><option value="all">All statuses</option><option value="active">Active</option><option value="completed">Done</option><option value="archived">Archived</option></select></label>
+              <label>Created month<select aria-label="Filter projects by month" value={monthFilter ?? "all"} onChange={event => setMonthFilter(event.target.value === "all" ? null : event.target.value)}><option value="all">Any month</option>{monthFilter && !projectMonths.includes(monthFilter) && <option value={monthFilter}>{projectMonthLabel(monthFilter)}</option>}{projectMonths.map(month => <option key={month} value={month}>{projectMonthLabel(month)}</option>)}</select></label>
+            </CollectionToolbar>
             {(statusFilter !== "all" || monthFilter || search.trim()) && <div className="ws-filter-summary" role="status">
               <span>{projects === undefined ? "Loading…" : `${visibleProjects.length} / ${projects.length} projects`}</span>
               {statusFilter !== "all" && <span className="ws-filter-chip">{statusLabel[statusFilter]}</span>}

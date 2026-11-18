@@ -20,6 +20,8 @@ import { buildCommentAuthorNames } from "../../lib/commentAuthors";
 import type { NotificationNavigation } from "../../lib/notificationNavigation";
 import PagePhoto from "../../components/PagePhoto";
 import CardIllustration from "../../components/CardIllustration";
+import CollectionToolbar from "../../components/CollectionToolbar";
+import { localDayKey, taskResults, type DeadlineFilter, type TaskSort } from "../../lib/collectionFilters";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -79,6 +81,14 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [search, setSearch] = useViewState("project:" + project._id + ":search", "");
+  const [statusFilter, setStatusFilter] = useViewState("project:" + project._id + ":status", "all");
+  const [priorityFilter, setPriorityFilter] = useViewState("project:" + project._id + ":priority", "all");
+  const [assigneeFilter, setAssigneeFilter] = useViewState("project:" + project._id + ":assignee", "all");
+  const [deadlineFilter, setDeadlineFilter] = useViewState<DeadlineFilter>("project:" + project._id + ":deadline", "all");
+  const [sort, setSort] = useViewState<TaskSort>("project:" + project._id + ":sort", "position");
+  const activeFilterCount = Number(Boolean(search.trim())) + Number(statusFilter !== "all") + Number(priorityFilter !== "all") + Number(assigneeFilter !== "all") + Number(deadlineFilter !== "all");
+  function clearFilters() { setSearch(""); setStatusFilter("all"); setPriorityFilter("all"); setAssigneeFilter("all"); setDeadlineFilter("all"); }
+  const assigneeOptions = useMemo(() => [...new Set([...(members ?? []).map(member => member.userId), ...(tasks ?? []).flatMap(task => task.assigneeId ? [task.assigneeId] : []), ...(!["all","me","unassigned"].includes(assigneeFilter) ? [assigneeFilter] : [])])], [members, tasks, assigneeFilter]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const formSnapshot = { title, description, priority, dueDate, assigneeId };
@@ -94,9 +104,9 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
   const isManager = role === "owner" || role === "admin";
   const active = project.status === "active";
   const canCreate = active && role !== "viewer";
-  const visible = useMemo(() => (tasks ?? [])
-    .filter(t => `${t.title} ${t.description}`.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => a.position - b.position), [tasks, search]);
+  const today = localDayKey();
+  const visible = useMemo(() => taskResults(tasks ?? [], { search, status: statusFilter, priority: priorityFilter, assignee: assigneeFilter, deadline: deadlineFilter, sort }, user?.id, today),
+    [tasks, search, statusFilter, priorityFilter, assigneeFilter, deadlineFilter, sort, user?.id, today]);
 
   useEffect(() => {
     if (!notificationNavigation || handledNavigation.current === notificationNavigation.requestId ||
@@ -106,14 +116,14 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
       setUnavailableRequest(notificationNavigation.requestId);
       return;
     }
-    if (search) { setSearch(""); return; }
+    if (activeFilterCount) { clearFilters(); return; }
     const element = notificationNavigation.taskId ? linkedTaskRef.current : linkedHeadingRef.current;
     if (element) {
       handledNavigation.current = notificationNavigation.requestId;
       element.scrollIntoView({ block: "center", inline: "center" });
       element.focus({ preventScroll: true });
     }
-  }, [notificationNavigation, tasks, search]);
+  }, [notificationNavigation, tasks, search, statusFilter, priorityFilter, assigneeFilter, deadlineFilter]);
   useEffect(() => {
     if (linkedTaskUnavailable) unavailableRef.current?.focus();
   }, [linkedTaskUnavailable]);
@@ -159,7 +169,8 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
     const task = tasks?.find(t => t._id === dragId);
     setDragId(null);
     if (!task || !canChange(task, targetStatus) || !active) return;
-    await run(() => moveTask({ taskId: task._id, targetStatus, beforeTaskId }), "Task moved.", "Could not move the task.", `move:${task._id}`);
+    if (sort !== "position" && task.status === targetStatus) return;
+    await run(() => moveTask({ taskId: task._id, targetStatus, beforeTaskId: sort === "position" ? beforeTaskId : undefined }), "Task moved.", "Could not move the task.", `move:${task._id}`);
   }
 
   async function move(task: Task, status: Status) {
@@ -214,9 +225,18 @@ return (
     {linkedTaskUnavailable && <div ref={unavailableRef} tabIndex={-1} className="kb-warning" role="alert">The linked task is no longer available. You can still browse the other tasks in this project.</div>}
     {!active && <div className="kb-warning">This project is read-only because it is not active.</div>}
     {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Close</button></div>}
-    <div className="kb-control-bar"><label className="kb-search-field"><Search size={17}/><input className="kb-search" aria-label="Search tasks" placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} /></label>
-      <button className="ui-button ui-secondary" type="button" aria-expanded={showHistory} onClick={() => setShowHistory(v => !v)}><History size={16}/>{showHistory ? "Hide activity" : "View activity"}</button></div>
-    <p className="kb-board-hint">Drag a card to move it, or choose its status.</p>
+    <CollectionToolbar scope="tasks" disabled={tasks === undefined} activeCount={activeFilterCount} sort={sort} onSort={value => setSort(value as TaskSort)}
+      sortOptions={[{value:"position",label:"Board order"},{value:"due",label:"Due date"},{value:"priority",label:"Priority"},{value:"newest",label:"Newest first"}]}
+      search={<label className="kb-search-field"><Search size={17}/><input className="kb-search" aria-label="Search tasks" placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} /></label>}
+      actions={<button className="ui-button ui-secondary" type="button" aria-expanded={showHistory} onClick={() => setShowHistory(v => !v)}><History size={16}/>{showHistory ? "Hide activity" : "View activity"}</button>}>
+      <label>Status<select aria-label="Filter tasks by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="all">All statuses</option>{lanes.map(lane => <option key={lane.key} value={lane.key}>{lane.title}</option>)}</select></label>
+      <label>Priority<select aria-label="Filter tasks by priority" value={priorityFilter} onChange={event => setPriorityFilter(event.target.value)}><option value="all">All priorities</option>{Object.entries(priorityLabel).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label>Assigned to<select aria-label="Filter tasks by assignee" value={assigneeFilter} onChange={event => setAssigneeFilter(event.target.value)}><option value="all">Anyone</option>{user?.id && <option value="me">Assigned to me</option>}<option value="unassigned">Unassigned</option>{assigneeOptions.map(id => <option key={id} value={id}>{assigneeLabel(id)}</option>)}</select></label>
+      <label>Deadline<select aria-label="Filter tasks by deadline" value={deadlineFilter} onChange={event => setDeadlineFilter(event.target.value as DeadlineFilter)}><option value="all">Any deadline</option><option value="overdue">Overdue</option><option value="today">Due today</option><option value="week">Next 7 days</option><option value="none">No due date</option></select></label>
+    </CollectionToolbar>
+    {tasks !== undefined && <div className="collection-results"><span role="status">{visible.length} of {tasks.length} tasks</span>{activeFilterCount > 0 && <button className="ui-button ui-secondary" type="button" onClick={clearFilters}>Clear filters</button>}</div>}
+    <p className="kb-board-hint">{sort === "position" ? "Drag a card to move it, or choose its status." : "Cards are sorted automatically. Drag between columns to change status."}</p>
+    {tasks !== undefined && tasks.length > 0 && visible.length === 0 && <div className="kb-empty-filter"><p>No tasks match these filters.</p><button className="ui-button ui-secondary" type="button" onClick={clearFilters}>Reset task filters</button></div>}
     {tasks === undefined && <p className="kb-muted" role="status">Loading project tasks...</p>}
     <div ref={columnsRef} className="kb-columns" aria-busy={tasks === undefined} role="region" aria-label="Task board, scroll horizontally to explore columns" tabIndex={0}>
       {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}
