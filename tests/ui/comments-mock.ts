@@ -80,3 +80,4 @@ export function useMutation(reference: Reference) {
   return mutations.get(name)!;
 }
 export const useUser = () => ({ user: { id: viewerId, firstName: viewerId === authorId ? "Hoàng" : "An", fullName: identityName(viewerId) } });
+export const useAuth = () => ({ getToken: async () => null });

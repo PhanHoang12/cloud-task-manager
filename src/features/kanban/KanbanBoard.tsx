@@ -19,6 +19,7 @@ import { buildAssigneeLabels, getAssigneeLabel } from "../../lib/assignees";
 import { buildCommentAuthorNames } from "../../lib/commentAuthors";
 import type { NotificationNavigation } from "../../lib/notificationNavigation";
 import PagePhoto from "../../components/PagePhoto";
+import CardIllustration from "../../components/CardIllustration";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
@@ -182,7 +183,7 @@ return (
       <ArrowLeft size={16}/> Back to projects
     </button>
 
-    <header className="kb-header photo-heading"><PagePhoto />
+    <header className="kb-header photo-heading"><PagePhoto src={project.coverUrl} />
       <div className="kb-header-info">
         <p className="kb-caption">
           KANBAN
@@ -238,6 +239,7 @@ return (
               <div className="kb-card-actions">{canChange(task, task.status) && <button type="button" aria-label="Edit" title="Edit task" className="kb-edit ui-button ui-secondary ui-icon" disabled={pending!==null} onClick={() => openEdit(task)}><Pencil size={15}/></button>}
               {isManager && active && <button className="ui-button ui-danger ui-icon" disabled={pending!==null} aria-busy={pending===`delete:${task._id}`} type="button" onClick={() => void deleteTask(task)} aria-label={`Delete ${task.title}`}><Trash2 size={15}/></button>}</div></div>
             <h3>{task.title}</h3>
+            <CardIllustration target={{ kind: "projectTasks", id: task._id }} title={task.title} src={task.coverUrl} editable={canChange(task, task.status)} disabled={pending!==null} />
             {task.description && <p>{task.description}</p>}
             <div className="kb-details">{task.dueDate && <span><CalendarDays size={14}/>Due: {formatDueDate(task.dueDate)}</span>}
               <span><UserRound size={14}/>{task.assigneeId ? `Assigned to: ${assigneeLabel(task.assigneeId)}` : "Unassigned"}</span></div>

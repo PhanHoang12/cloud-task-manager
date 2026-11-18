@@ -12,6 +12,8 @@ const workspaceRole = v.union(
 export default defineSchema({
   // Giữ nguyên dữ liệu công việc cá nhân v1.0
   tasks: defineTable({
+    coverStorageId: v.optional(v.id("_storage")),
+    coverUrl: v.optional(v.string()),
     ownerId: v.string(),
     title: v.string(),
     description: v.string(),
@@ -57,6 +59,8 @@ export default defineSchema({
 
   // Các dự án nằm trong Workspace
   projects: defineTable({
+    coverStorageId: v.optional(v.id("_storage")),
+    coverUrl: v.optional(v.string()),
     workspaceId: v.id("workspaces"),
     name: v.string(),
     description: v.string(),
@@ -98,6 +102,8 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId", "createdAt"]),
   projectTasks: defineTable({
+  coverStorageId: v.optional(v.id("_storage")),
+  coverUrl: v.optional(v.string()),
   projectId: v.id("projects"),
 
   title: v.string(),

@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
     contentType: "application/javascript", body: 'export {useQuery, useMutation} from "/tests/ui/assignee-mock.ts";',
   }));
   await page.route("**/node_modules/.vite/deps/@clerk_react.js*", route => route.fulfill({
-    contentType: "application/javascript", body: 'export {useUser} from "/tests/ui/assignee-mock.ts";',
+    contentType: "application/javascript", body: 'export {useUser,useAuth} from "/tests/ui/assignee-mock.ts";',
   }));
 });
 const fixture = "/tests/ui/assignee-fixture.html";

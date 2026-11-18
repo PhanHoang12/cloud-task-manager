@@ -2,8 +2,11 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { illustrationOptions, uploadIllustration } from "./illustrationUpload";
 
 const http = httpRouter();
+http.route({ path: "/upload-illustration", method: "OPTIONS", handler: illustrationOptions });
+http.route({ path: "/upload-illustration", method: "POST", handler: uploadIllustration });
 
 const MAX_SIZE = 2 * 1024 * 1024;
 

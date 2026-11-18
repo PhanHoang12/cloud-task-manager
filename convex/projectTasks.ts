@@ -167,5 +167,6 @@ export const remove = mutation({ args: { taskId: v.id("projectTasks") }, handler
   if (membership.role !== "owner" && membership.role !== "admin") throw new Error("Chỉ Owner/Admin có thể xóa Task.");
   await log(ctx, { projectId: task.projectId, taskId: args.taskId, actorId: userId, type: "deleted", detail: task.title });
   await invalidateTaskDeadlineAlerts(ctx, args.taskId);
+  if (task.coverStorageId) await ctx.storage.delete(task.coverStorageId);
   await ctx.db.delete(args.taskId);
 }});

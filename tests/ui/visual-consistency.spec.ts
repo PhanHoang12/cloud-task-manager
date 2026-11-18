@@ -1,5 +1,6 @@
 
 import { expect, test, type Page, type Locator } from "./test";
+import fs from "node:fs";
 const fixture="/tests/ui/popup-fixture.html";
 async function navigate(page: Page, name: string) {
  const button=page.getByRole("navigation").getByRole("button",{name,exact:true});
@@ -153,4 +154,80 @@ test("Forced-colors removes decorative photography while headings and keyboard a
  await expect(page.getByRole('heading',{name:'Workspaces',exact:true})).toBeVisible();
  const create=page.getByRole('button',{name:'New workspace',exact:true});await create.focus();await expect(create).toBeFocused();await create.press('Enter');
  await expect(page.locator('dialog')).toBeVisible();await expect(page.locator('dialog input').first()).toBeFocused();
+});
+
+test("Search fields have exactly one focus ring and retain working filters across screens", async ({ page }) => {
+ await page.goto(fixture);
+ const check=async(input:Locator,wrapper:Locator)=>{
+  const before=await wrapper.boundingBox();await input.focus();
+  await expect(input).toHaveCSS('outline-style','none');await expect(input).toHaveCSS('box-shadow','none');
+  await expect(wrapper).toHaveCSS('outline-style','solid');await expect(wrapper).toHaveCSS('outline-width','3px');
+  expect(await wrapper.boundingBox()).toEqual(before);
+ };
+ await check(page.getByRole('textbox',{name:'Search projects',exact:true}),page.locator('.ws-search'));
+ await page.getByRole('textbox',{name:'Search projects',exact:true}).fill('no-matching-illustration-project');
+ await expect(page.getByRole('heading',{name:'No matching projects'})).toBeVisible();
+ await page.getByRole('textbox',{name:'Search projects',exact:true}).fill('');
+ await page.locator('#workspace-select').selectOption('workspace-b');await page.locator('.kb-open-project').click();
+ await check(page.getByRole('textbox',{name:'Search tasks',exact:true}),page.locator('.kb-search-field'));
+ await page.getByRole('textbox',{name:'Search tasks',exact:true}).fill('no-matching-illustration-task');
+ await expect(page.locator('.kb-card')).toHaveCount(0);
+ await navigate(page,'My tasks');await check(page.getByRole('textbox',{name:'Search tasks',exact:true}),page.locator('.search'));
+});
+
+test("Project cards have contained covers and image actions follow viewer permissions",async({page})=>{
+ await page.goto(fixture);
+ const card=page.locator('.ws-project-card').first();const image=card.locator('.card-illustration > img');
+ await expect(image).toBeVisible();await expect.poll(()=>image.evaluate(el=>(el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+ const upload=card.getByRole('button',{name:/Add illustration/});await upload.focus();await expect(upload).toBeFocused();
+ const [chooser]=await Promise.all([page.waitForEvent('filechooser'),upload.press('Enter')]);expect(chooser.isMultiple()).toBe(false);
+ await page.goto(fixture+'?viewer');await page.locator('#workspace-select').selectOption('workspace-b');
+ await expect(page.locator('.ws-project-card .card-illustration > img')).toBeVisible();
+ await expect(page.getByRole('button',{name:/Add illustration/})).toHaveCount(0);
+ await page.locator('.kb-open-project').click();await expect(page.getByRole('button',{name:/Add illustration/})).toHaveCount(0);
+});
+
+test("Illustration uploads validate files, send the correct target, update from query data and recover from errors",async({page})=>{
+ await page.route('**/tests/ui/experience-mock.ts',async route=>{
+  const response=await route.fetch();let source=await response.text();
+  expect(source).toContain('getToken: async () => null');
+  source=source.replace('getToken: async () => null','getToken: async () => "fixture-illustration-token"');
+  source=source.replace('if (name === "profiles:upsert")','if (name === "illustrations:remove") Object.assign(pa,{coverUrl:undefined}); else if (name === "profiles:upsert")');
+  source+='\n;window.setIllustration = (url) => { Object.assign(pa,{coverUrl:url}); notify(); };';
+  await route.fulfill({response,body:source});
+ });
+ let calls=0,fail=false;
+ await page.route('**/upload-illustration?*',async route=>{
+  calls++;const url=new URL(route.request().url());expect(url.searchParams.get('kind')).toBe('projects');expect(url.searchParams.get('id')).toBe('project-a');
+  expect(route.request().headers()['content-type']).toBe('image/webp');
+  expect(route.request().headers()['authorization']).toBe('Bearer fixture-illustration-token');
+  if(fail)return route.fulfill({status:403,body:'You no longer have permission to change this image.'});
+  await page.evaluate(()=> (window as unknown as {setIllustration:(url:string)=>void}).setIllustration('/src/assets/photography/sunlit-desk.webp'));
+  await route.fulfill({status:200,contentType:'application/json',body:'{"success":true}'});
+ });
+ await page.goto(fixture);const input=page.locator('.ws-project-card input[type=file]');
+ await input.setInputFiles({name:'invalid.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg/>')});
+ await expect(page.getByText('Choose a JPG, PNG or WebP image.',{exact:true})).toBeVisible();expect(calls).toBe(0);
+ await input.setInputFiles({name:'too-large.webp',mimeType:'image/webp',buffer:Buffer.alloc(2*1024*1024+1)});
+ await expect(page.getByText('Choose an image under 2 MB.',{exact:true})).toBeVisible();expect(calls).toBe(0);
+ const photo=fs.readFileSync('src/assets/photography/sunlit-desk.webp');
+ await input.setInputFiles({name:'desk.webp',mimeType:'image/webp',buffer:photo});
+ await expect(page.getByRole('button',{name:/Change illustration/})).toBeEnabled();expect(calls).toBe(1);
+ await expect(page.locator('.ws-project-card img')).toHaveAttribute('alt',/ illustration$/);
+ await page.locator('.kb-open-project').click();
+ await expect(page.locator('.scene-photo img')).toHaveAttribute('src','/src/assets/photography/sunlit-desk.webp');
+ await page.getByRole('button',{name:'Back to projects',exact:true}).click();
+ await navigate(page,'My tasks');await navigate(page,'Workspaces & projects');
+ await expect(page.getByRole('button',{name:/Change illustration/})).toBeVisible();
+ fail=true;await page.locator('.ws-project-card input[type=file]').setInputFiles({name:'desk.webp',mimeType:'image/webp',buffer:photo});
+ await expect(page.getByText('You no longer have permission to change this image.',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:/Change illustration/})).toBeEnabled();
+ await expect(page.locator('.ws-project-card img')).toHaveAttribute('alt',/ illustration$/);
+ await page.getByRole('button',{name:/Remove illustration/}).click();
+ await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click();
+ await expect(page.getByRole('button',{name:/Change illustration/})).toBeVisible();
+ await page.getByRole('button',{name:/Remove illustration/}).click();
+ await page.getByRole('dialog').getByRole('button',{name:'Remove image',exact:true}).click();
+ await expect(page.getByRole('button',{name:/Add illustration/})).toBeVisible();
+ await expect(page.locator('.ws-project-card')).toHaveCount(1);
 });

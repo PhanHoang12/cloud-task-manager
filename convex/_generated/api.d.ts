@@ -16,6 +16,8 @@ import type * as comments from "../comments.js";
 import type * as crons from "../crons.js";
 import type * as deadlineLifecycle from "../deadlineLifecycle.js";
 import type * as http from "../http.js";
+import type * as illustrationUpload from "../illustrationUpload.js";
+import type * as illustrations from "../illustrations.js";
 import type * as invitations from "../invitations.js";
 import type * as members from "../members.js";
 import type * as notifications from "../notifications.js";
@@ -42,6 +44,8 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   deadlineLifecycle: typeof deadlineLifecycle;
   http: typeof http;
+  illustrationUpload: typeof illustrationUpload;
+  illustrations: typeof illustrations;
   invitations: typeof invitations;
   members: typeof members;
   notifications: typeof notifications;

@@ -76,7 +76,8 @@ export const remove = mutation({
   args: {id:v.id("tasks")},
   handler: async (ctx,args) => {
     const ownerId=await requireUser(ctx);
-    await ownedTask(ctx,args.id,ownerId);
+    const task = await ownedTask(ctx,args.id,ownerId);
+    if (task.coverStorageId) await ctx.storage.delete(task.coverStorageId);
     await ctx.db.delete(args.id);
   },
 });

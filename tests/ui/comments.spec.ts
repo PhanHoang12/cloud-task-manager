@@ -6,7 +6,7 @@ async function open(page: Page, viewer: string, identity = "") {
     contentType: "application/javascript", body: 'export {useQuery,useMutation} from "/tests/ui/comments-mock.ts";',
   }));
   await page.route("**/node_modules/.vite/deps/@clerk_react.js*", route => route.fulfill({
-    contentType: "application/javascript", body: 'export {useUser} from "/tests/ui/comments-mock.ts";',
+    contentType: "application/javascript", body: 'export {useUser,useAuth} from "/tests/ui/comments-mock.ts";',
   }));
   await page.goto(fixture + "&viewer=" + viewer + "&identity=" + identity);
   await panel(page).locator(".tc-toggle").click();

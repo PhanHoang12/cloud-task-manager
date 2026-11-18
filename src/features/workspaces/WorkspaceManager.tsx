@@ -18,6 +18,7 @@ import ScreenErrorBoundary from "../../components/ScreenErrorBoundary";
 import { getErrorMessage, roleLabels } from "../../lib/uiText";
 import type { NotificationNavigation } from "../../lib/notificationNavigation";
 import PagePhoto from "../../components/PagePhoto";
+import CardIllustration from "../../components/CardIllustration";
 
 type Modal = "workspace" | "project" | null;
 type ProjectStatus = "active" | "completed" | "archived";
@@ -193,6 +194,7 @@ export default function WorkspaceManager({ initialNotification }: { initialNotif
               <div className="ws-grid">
                 {visibleProjects.map((project) => (
                   <article key={project._id} className="ws-project-card" aria-busy={pending===project._id}>
+                    <CardIllustration target={{ kind: "projects", id: project._id }} title={project.name} src={project.coverUrl} editable={canManageProject} disabled={pending!==null} projectCover />
                     <div className="ws-project-top"><div className="ws-project-icon"><FolderKanban size={23}/></div>
                     <span className={`ws-status ws-${project.status}`}>{statusLabel[project.status]}</span>
                     </div>

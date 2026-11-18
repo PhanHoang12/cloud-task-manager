@@ -5,6 +5,7 @@ const params = new URLSearchParams(location.search);
 const mode = params.get("mode");
 const currentId = "user_current_PRIVATE";
 export const useUser = () => ({ user: { id: currentId, fullName: "Lê Minh", firstName: "Minh" } });
+export const useAuth = () => ({ getToken: async () => null });
 const now = Date.now();
 const seedMembers = [
   { _id: "m0", userId: currentId, role: "owner", fullName: "Lê Minh", email: "me@example.invalid" },
