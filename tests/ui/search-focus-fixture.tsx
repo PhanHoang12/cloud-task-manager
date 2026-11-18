@@ -22,8 +22,8 @@ function Fixture() {
       : text.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
   });
   const input = <input
-    aria-label={kind === "personal" ? "Tìm công việc" : "Tìm dự án"}
-    placeholder={kind === "personal" ? "Tìm công việc..." : "Tìm dự án theo tên hoặc mô tả..."}
+    aria-label={kind === "personal" ? "Search tasks" : "Search projects"}
+    placeholder={kind === "personal" ? "Search tasks..." : "Search projects by name or description..."}
     value={search}
     onChange={event => setSearch(event.target.value)}
   />;
@@ -39,11 +39,11 @@ function Fixture() {
     <div className="ctp-right"><div className="ctp-content">
       {kind === "personal"
         ? <section className="personal-dashboard"><main className="main" id="canvas">
-            <header className="topbar"><div><h1>Công việc cá nhân</h1><p className="subtitle">Tìm kiếm công việc của bạn.</p></div></header>
+            <header className="topbar"><div><h1>My tasks</h1><p className="subtitle">Tìm kiếm công việc của bạn.</p></div></header>
             <section className={whiteSurface ? "task-section" : undefined}><div className="toolbar">{controls}</div></section>
           </main></section>
         : <section className="ws-page" id="canvas">
-            <header className="ws-heading"><div><h1>Không gian làm việc</h1><p className="ws-muted">Tìm kiếm dự án của nhóm.</p></div></header>
+            <header className="ws-heading"><div><h1>Workspaces</h1><p className="ws-muted">Tìm kiếm projects của nhóm.</p></div></header>
             <section className={whiteSurface ? "ws-panel ws-projects" : undefined}>{controls}</section>
           </section>}
       <ul aria-label="Kết quả tìm kiếm">{visible.map(item => <li key={item.title}>{item.title}</li>)}</ul>

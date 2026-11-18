@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/react";
+import { ArrowLeft, CalendarDays, CheckCircle2, CircleDashed, Clock3, Eye, GripVertical, History, Pencil, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import "./kanban.css";
@@ -17,20 +18,22 @@ import { activityLabels, formatActivityDetail, formatDueDate, getErrorMessage } 
 import { buildAssigneeLabels, getAssigneeLabel } from "../../lib/assignees";
 import { buildCommentAuthorNames } from "../../lib/commentAuthors";
 import type { NotificationNavigation } from "../../lib/notificationNavigation";
+import PagePhoto from "../../components/PagePhoto";
 
 type Task = Doc<"projectTasks">;
 type Status = Task["status"];
 type Priority = Task["priority"];
 type Role = "owner" | "admin" | "member" | "viewer";
 const lanes: { key: Status; title: string }[] = [
-  { key: "todo", title: "Cần làm" },
-  { key: "in_progress", title: "Đang thực hiện" },
-  { key: "review", title: "Chờ duyệt" },
-  { key: "done", title: "Hoàn thành" },
+  { key: "todo", title: "To do" },
+  { key: "in_progress", title: "In progress" },
+  { key: "review", title: "In review" },
+  { key: "done", title: "Done" },
 ];
 const priorityLabel: Record<Priority, string> = {
-  low: "Thấp", medium: "Trung bình", high: "Cao", urgent: "Khẩn cấp",
+  low: "Low", medium: "Medium", high: "High", urgent: "Urgent",
 };
+const laneIcons = { todo: CircleDashed, in_progress: Clock3, review: Eye, done: CheckCircle2 };
 
 export default function KanbanBoard({ project, workspaceId, role, onBack, notificationNavigation }: {
   project: Doc<"projects">;
@@ -133,10 +136,10 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
         await create({ projectId: project._id, title: title.trim(), description: description.trim(), priority,
           dueDate: dueDate || undefined, assigneeId: assigneeId || undefined });
       }
-      notify(editingTask ? "Đã lưu thay đổi công việc." : "Đã tạo công việc.");
+      notify(editingTask ? "Task changes saved." : "Task created.");
       setTitle(""); setDescription(""); setDueDate("");
       setAssigneeId(""); setPriority("medium"); setEditingTask(null); setShowModal(false);
-    } catch (e) { const message = getErrorMessage(e, "Không thể lưu công việc."); setError(message); notify(message, "error"); }
+    } catch (e) { const message = getErrorMessage(e, "Could not save the task."); setError(message); notify(message, "error"); }
     finally { setBusy(false); }
   }
 
@@ -155,17 +158,17 @@ export default function KanbanBoard({ project, workspaceId, role, onBack, notifi
     const task = tasks?.find(t => t._id === dragId);
     setDragId(null);
     if (!task || !canChange(task, targetStatus) || !active) return;
-    await run(() => moveTask({ taskId: task._id, targetStatus, beforeTaskId }), "Đã di chuyển công việc.", "Không thể di chuyển công việc.", `move:${task._id}`);
+    await run(() => moveTask({ taskId: task._id, targetStatus, beforeTaskId }), "Task moved.", "Could not move the task.", `move:${task._id}`);
   }
 
   async function move(task: Task, status: Status) {
     if (!canChange(task, status)) return;
-    await run(() => setStatus({ taskId: task._id, status }), "Đã cập nhật trạng thái.", "Không thể đổi trạng thái.", `move:${task._id}`);
+    await run(() => setStatus({ taskId: task._id, status }), "Status updated.", "Could not change the status.", `move:${task._id}`);
   }
 
   async function deleteTask(task: Task) {
-    if (pending || !await confirm({ title: "Xóa công việc?", description: `Công việc “${task.title}” cùng các dữ liệu liên quan sẽ bị xóa. Bạn không thể hoàn tác thao tác này.` })) return;
-    await run(() => remove({ taskId: task._id }), "Đã xóa công việc.", "Không thể xóa công việc.", `delete:${task._id}`);
+    if (pending || !await confirm({ title: "Delete task?", description: `Task “${task.title}” and its related data will be deleted. This cannot be undone.` })) return;
+    await run(() => remove({ taskId: task._id }), "Task deleted.", "Could not delete the task.", `delete:${task._id}`);
   }
 
   
@@ -176,20 +179,20 @@ return (
       className="kb-back"
       onClick={onBack}
     >
-      ← Trở về danh sách dự án
+      <ArrowLeft size={16}/> Back to projects
     </button>
 
-    <header className="kb-header">
+    <header className="kb-header photo-heading"><PagePhoto />
       <div className="kb-header-info">
         <p className="kb-caption">
-          DỰ ÁN / BẢNG CÔNG VIỆC
+          KANBAN
         </p>
 
         <h2 ref={linkedHeadingRef} tabIndex={notificationNavigation ? -1 : undefined} className={notificationNavigation ? "kb-notification-heading" : undefined}>{project.name}</h2>
 
         <p>
           {project.description ||
-            "Quản lý công việc dự án theo thời gian thực."}
+            "Bring every part of your project into focus."}
         </p>
       </div>
 
@@ -201,44 +204,45 @@ return (
             className="kb-primary ui-button ui-primary"
             onClick={openCreate}
           >
-            + Công việc mới
+            <Plus size={17}/> New task
           </button>
         )}
       </div>
     </header>
     <div className="kb-deadline-notices" ref={setDeadlineNoticeTarget} />
-    {linkedTaskUnavailable && <div ref={unavailableRef} tabIndex={-1} className="kb-warning" role="alert">Không tìm thấy công việc được liên kết trong danh sách hiện có. Bạn có thể xem các công việc khác của dự án.</div>}
-    {!active && <div className="kb-warning">Dự án không hoạt động. Chỉ xem công việc.</div>}
-    {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Đóng</button></div>}
-    <input className="kb-search" aria-label="Tìm công việc" placeholder="Tìm kiếm công việc..." value={search} onChange={e => setSearch(e.target.value)} />
-    <div className="kb-toolbar"><span>Kéo thả để sắp xếp hoặc chọn trạng thái trên thẻ công việc.</span>
-      <button type="button" onClick={() => setShowHistory(v => !v)}>{showHistory ? "Ẩn lịch sử" : "Xem lịch sử"}</button></div>
-    {tasks === undefined && <p className="kb-muted" role="status">Đang tải công việc của dự án...</p>}
-    <div ref={columnsRef} className="kb-columns" aria-busy={tasks === undefined} role="region" aria-label="Bảng công việc, cuộn ngang để xem các cột" tabIndex={0}>
+    {linkedTaskUnavailable && <div ref={unavailableRef} tabIndex={-1} className="kb-warning" role="alert">The linked task is no longer available. You can still browse the other tasks in this project.</div>}
+    {!active && <div className="kb-warning">This project is read-only because it is not active.</div>}
+    {error && <div role="alert" className="kb-error">{error} <button onClick={() => setError("")}>Close</button></div>}
+    <div className="kb-control-bar"><label className="kb-search-field"><Search size={17}/><input className="kb-search" aria-label="Search tasks" placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} /></label>
+      <button className="ui-button ui-secondary" type="button" aria-expanded={showHistory} onClick={() => setShowHistory(v => !v)}><History size={16}/>{showHistory ? "Hide activity" : "View activity"}</button></div>
+    <p className="kb-board-hint">Drag a card to move it, or choose its status.</p>
+    {tasks === undefined && <p className="kb-muted" role="status">Loading project tasks...</p>}
+    <div ref={columnsRef} className="kb-columns" aria-busy={tasks === undefined} role="region" aria-label="Task board, scroll horizontally to explore columns" tabIndex={0}>
       {lanes.map(lane => <section key={lane.key} className={`kb-column kb-${lane.key}`}
         onDragOver={e => {if (dragId) e.preventDefault();}}
         onDrop={e => { e.preventDefault(); void dropTask(lane.key); }}>
-        <div className="kb-column-title"><strong>{lane.title}</strong><span>{tasks === undefined ? "…" : visible.filter(t => t.status === lane.key).length}</span></div>
-        {tasks === undefined ? <p className="kb-muted" aria-hidden="true">Đang tải...</p> :
+        <div className="kb-column-title"><strong>{(() => { const Icon = laneIcons[lane.key]; return <Icon size={16}/>; })()}{lane.title}</strong><span>{tasks === undefined ? "…" : visible.filter(t => t.status === lane.key).length}</span></div>
+        {tasks === undefined ? <p className="kb-muted" aria-hidden="true">Loading...</p> :
           visible.filter(t => t.status === lane.key).map(task => <article className="kb-card" key={task._id}
             ref={task._id === notificationNavigation?.taskId ? linkedTaskRef : undefined}
             tabIndex={task._id === notificationNavigation?.taskId ? -1 : undefined}
             data-notification-target={task._id === notificationNavigation?.taskId ? "true" : undefined}
-            aria-label={task._id === notificationNavigation?.taskId ? `Công việc: ${task.title}` : undefined}
+            aria-label={task._id === notificationNavigation?.taskId ? `Task: ${task.title}` : undefined}
             aria-busy={pending===`move:${task._id}` || pending===`delete:${task._id}`}
             draggable={!pending && canChange(task, task.status)}
             onDragStart={e => {e.dataTransfer.effectAllowed = "move"; setDragId(task._id);}}
             onDragEnd={() => setDragId(null)}
             onDragOver={e => {if (dragId && dragId !== task._id) e.preventDefault();}}
             onDrop={e => {e.stopPropagation(); e.preventDefault(); void dropTask(lane.key, task._id);}}>
-            <div className="kb-card-top"><span className={`kb-priority kb-${task.priority}`}>{priorityLabel[task.priority]}</span>
-              {isManager && active && <button className="ui-button ui-danger ui-icon" disabled={pending!==null} aria-busy={pending===`delete:${task._id}`} type="button" onClick={() => void deleteTask(task)} aria-label={`Xóa ${task.title}`}>×</button>}</div>
+            <div className="kb-card-top"><div className="kb-card-label">{canChange(task, task.status) && <GripVertical className="kb-drag-hint" size={14} aria-hidden="true"/>}<span className={`kb-priority kb-${task.priority}`}>{priorityLabel[task.priority]}</span></div>
+              <div className="kb-card-actions">{canChange(task, task.status) && <button type="button" aria-label="Edit" title="Edit task" className="kb-edit ui-button ui-secondary ui-icon" disabled={pending!==null} onClick={() => openEdit(task)}><Pencil size={15}/></button>}
+              {isManager && active && <button className="ui-button ui-danger ui-icon" disabled={pending!==null} aria-busy={pending===`delete:${task._id}`} type="button" onClick={() => void deleteTask(task)} aria-label={`Delete ${task.title}`}><Trash2 size={15}/></button>}</div></div>
             <h3>{task.title}</h3>
-            {canChange(task, task.status) && <button type="button" className="kb-edit ui-button ui-secondary" disabled={pending!==null} onClick={() => openEdit(task)}>Chỉnh sửa</button>}{task.description && <p>{task.description}</p>}
-            <div className="kb-details">{task.dueDate && <span>Hạn: {formatDueDate(task.dueDate)}</span>}
-              <span>{task.assigneeId ? `Phụ trách: ${assigneeLabel(task.assigneeId)}` : "Chưa phân công"}</span></div>
+            {task.description && <p>{task.description}</p>}
+            <div className="kb-details">{task.dueDate && <span><CalendarDays size={14}/>Due: {formatDueDate(task.dueDate)}</span>}
+              <span><UserRound size={14}/>{task.assigneeId ? `Assigned to: ${assigneeLabel(task.assigneeId)}` : "Unassigned"}</span></div>
               <label>
-                Trạng thái
+                Status
                 <select
                   value={task.status}
                   disabled={pending!==null || !canChange(task, task.status)}
@@ -257,15 +261,15 @@ return (
                   ))}
                 </select>
               </label>
-            {(pending===`move:${task._id}` || pending===`delete:${task._id}`) && <span className="ui-inline-busy" role="status">Đang xử lý...</span>}
+            {(pending===`move:${task._id}` || pending===`delete:${task._id}`) && <span className="ui-inline-busy" role="status">Working...</span>}
             {/* Module 04.4 — Subtasks & Progress Tracking */}
-            <ScreenErrorBoundary scope="Công việc con" resetKey={task._id} compact>
+            <ScreenErrorBoundary scope="Subtasks" resetKey={task._id} compact>
             <SubtaskPanel
               compact
               taskId={task._id}
               editable={canChange(task, task.status)}/>
             </ScreenErrorBoundary>
-            <ScreenErrorBoundary scope="Thảo luận" resetKey={task._id} compact>
+            <ScreenErrorBoundary scope="Discussion" resetKey={task._id} compact>
               <TaskComments
             authorNames={commentAuthorNames}
             taskId={task._id}
@@ -274,35 +278,35 @@ return (
             </ScreenErrorBoundary>
             </article>)}
 
-        {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">Chưa có công việc</p>}
+        {tasks !== undefined && !visible.some(t => t.status === lane.key) && <p className="kb-muted">No tasks yet</p>}
       </section>)}
     </div>
-    <ScreenErrorBoundary scope="Tiến độ và nhắc hạn" resetKey={project._id}>
+    <ScreenErrorBoundary scope="Progress & deadlines" resetKey={project._id}>
       <AutomationDashboard projectId={project._id} noticeTarget={deadlineNoticeTarget}
         onReviewTasks={() => { setSearch(""); columnsRef.current?.focus(); columnsRef.current?.scrollIntoView({ block: "nearest" }); }} />
     </ScreenErrorBoundary>
-    {showHistory && <section className="kb-history"><h3>Lịch sử công việc</h3>
-      {activities === undefined ? <p role="status">Đang tải lịch sử công việc...</p> : activities.length === 0 ? <p>Chưa có thay đổi nào.</p> :
+    {showHistory && <section className="kb-history"><h3>Project activity</h3>
+      {activities === undefined ? <p role="status">Loading activity...</p> : activities.length === 0 ? <p>No changes yet.</p> :
         <ul>{activities.map(a => <li key={a._id}><strong>{activityLabels[a.type]}</strong> — {formatActivityDetail(a.type, a.detail)}
-          <small> • {new Date(a.createdAt).toLocaleString("vi-VN")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
+          <small> • {new Date(a.createdAt).toLocaleString("en-US")} • {a.actorId.slice(-8)}</small></li>)}</ul>}
     </section>}
-    {showModal && <ModalDialog className="kb-overlay" label={editingTask ? "Chỉnh sửa công việc" : "Tạo công việc"} busy={busy} onDismiss={closeTask}>
+    {showModal && <ModalDialog className="kb-overlay" label={editingTask ? "Edit task" : "Create task"} busy={busy} onDismiss={closeTask}>
       <form className="kb-dialog" onSubmit={e => void submit(e)}>
-        <div className="kb-dialog-head"><h3>{editingTask ? "Chỉnh sửa công việc" : "Tạo công việc mới"}</h3><button className="ui-button ui-secondary ui-icon" aria-label="Đóng" type="button" onClick={closeTask} disabled={busy}>×</button></div>
-        <label>Tiêu đề *<input disabled={busy} required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
-        <label>Mô tả<textarea disabled={busy} rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
-        <div className="kb-form-row"><label>Ưu tiên<select disabled={busy} value={priority} onChange={e => setPriority(e.target.value as Priority)}>
+        <div className="kb-dialog-head"><h3>{editingTask ? "Edit task" : "Create a task"}</h3><button className="ui-button ui-secondary ui-icon" aria-label="Close" type="button" onClick={closeTask} disabled={busy}>×</button></div>
+        <label>Title *<input disabled={busy} required minLength={3} maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label>
+        <label>Description<textarea disabled={busy} rows={3} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
+        <div className="kb-form-row"><label>Priority<select disabled={busy} value={priority} onChange={e => setPriority(e.target.value as Priority)}>
           {Object.entries(priorityLabel).map(([k,v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-          <label>Hạn hoàn thành<input disabled={busy} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></label></div>
-        <label>Người phụ trách<select aria-busy={members === undefined} disabled={busy || (!!editingTask && !isManager)} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
-          <option value="">Chưa phân công</option>
+          <label>Due date<input disabled={busy} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} /></label></div>
+        <label>Assignee<select aria-busy={members === undefined} disabled={busy || (!!editingTask && !isManager)} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+          <option value="">Unassigned</option>
           {assigneeId && !members?.some(m => m.userId === assigneeId && m.role !== "viewer") &&
-            <option value={assigneeId} disabled>{assigneeLabel(assigneeId)} · Không thể chọn mới</option>}
+            <option value={assigneeId} disabled>{assigneeLabel(assigneeId)} · Not available for a new assignment</option>}
           {members?.filter(m => m.role !== "viewer").map(m => <option key={m._id} value={m.userId}>{assigneeLabel(m.userId)}</option>)}
-        </select>{members === undefined && <span role="status">Đang tải danh sách thành viên…</span>}</label>
+        </select>{members === undefined && <span role="status">Loading members…</span>}</label>
         {error && <p role="alert" className="kb-error">{error}</p>}
-        <div className="kb-actions"><button className="ui-button ui-secondary" type="button" disabled={busy} onClick={closeTask}>Hủy</button>
-          <button className="ui-button ui-primary" aria-busy={busy} type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Đang lưu..." : editingTask ? "Lưu thay đổi" : "Tạo công việc"}</button></div>
+        <div className="kb-actions"><button className="ui-button ui-secondary" type="button" disabled={busy} onClick={closeTask}>Cancel</button>
+          <button className="ui-button ui-primary" aria-busy={busy} type="submit" disabled={busy || title.trim().length < 3}>{busy ? "Saving..." : editingTask ? "Save changes" : "Create task"}</button></div>
       </form>
     </ModalDialog>}
   </div>

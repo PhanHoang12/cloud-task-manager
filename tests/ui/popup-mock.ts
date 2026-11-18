@@ -7,9 +7,9 @@ const member = { _id: "member", userId: "user-fixture", role: "owner", fullName:
 const workspace = { _id: "workspace", name: "Nhóm kiểm tra", description: "", myRole: "owner" };
 const project = { _id: "project", workspaceId: "workspace", name: "Dự án kiểm tra", description: "Kiểm tra điều hướng popup.", status: "active", _creationTime: now };
 const seedNotifications = [
-  { _id: "notice-one", message: "Công việc mới được giao", kind: "assigned", createdAt: now, isRead: false },
+  { _id: "notice-one", message: "New task được giao", kind: "assigned", createdAt: now, isRead: false },
   { _id: "notice-two", message: "Bình luận mới trong công việc", kind: "comment", createdAt: now, isRead: false },
-  { _id: "notice-three", message: "Thông báo đã đọc", kind: "comment", createdAt: now, isRead: true },
+  { _id: "notice-three", message: "Notifications đã đọc", kind: "comment", createdAt: now, isRead: true },
 ];
 let notifications: typeof seedNotifications | undefined = mode === "loading" ? undefined : mode === "empty" ? [] : seedNotifications;
 let account = { clerk: { name: "Sinh viên kiểm tra", email: "student@example.invalid" },
@@ -80,7 +80,7 @@ export function useMutation(reference: Reference) {
     window.popupRegression.calls.push({ name, args });
     if (name === "profiles:syncIdentity") return;
     if (name !== "notifications:markRead") throw new Error("Unexpected popup fixture mutation");
-    if (window.popupRegression.failRead) throw new Error("Không thể đánh dấu thông báo đã đọc.");
+    if (window.popupRegression.failRead) throw new Error("Could not mark the notification as read.");
     notifications = notifications?.map(item => item._id === args.notificationId ? { ...item, isRead: true } : item);
     notify();
   });

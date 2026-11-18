@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRe
 import { createPath, useLocation, useNavigate, useNavigationType, type Location } from "react-router";
 import type { Id } from "../../convex/_generated/dataModel";
 import { routeFromLocation, routePath, type AppRoute } from "../lib/appRoutes";
-const discardMessage = "Bạn có thay đổi chưa lưu. Rời khỏi đây sẽ bỏ các thay đổi này. Bạn có muốn tiếp tục?";
+const discardMessage = "You have unsaved changes. Leaving will discard them. Do you want to continue?";
 export function confirmDiscard(dirty: boolean, busy = false) {
   return !busy && (!dirty || window.confirm(discardMessage));
 }
@@ -61,7 +61,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const allowLeave = useCallback(() => {
     const active = [...guards.current.values()];
     if (active.some(guard => guard.busy)) {
-      setNotice("Đang lưu thay đổi. Hãy đợi thao tác hoàn tất trước khi chuyển trang.");
+      setNotice("Your changes are still being saved. Please wait before leaving.");
       return false;
     }
     const allowed = confirmDiscard(active.some(guard => guard.dirty));

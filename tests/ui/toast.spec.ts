@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 
 test.beforeEach(async ({ page }) => {
   // Swap only the fixture's Convex hooks; never connect to an authenticated deployment.
@@ -27,9 +27,9 @@ async function placeSaveUnderToast(page: Page) {
 for (const kind of ["success", "error", "mixed"]) {
   test(`stacked ${kind} toast bodies allow a real pointer Save on SubtaskPanel`, async ({ page }, testInfo) => {
     await page.goto("/tests/ui/toast-fixture.html?kind=" + kind);
-    await page.getByRole("button", { name: "Sửa", exact: true }).click();
-    await expect(page.getByLabel("Sửa tên công việc con")).toBeFocused();
-    await page.getByLabel("Sửa tên công việc con").fill("Tên được lưu qua thông báo");
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
+    await expect(page.getByLabel("Rename subtask")).toBeFocused();
+    await page.getByLabel("Rename subtask").fill("Tên được lưu qua thông báo");
     await page.getByRole("button", { name: "Hiển thị bốn thông báo", exact: true }).click();
     await expect(page.locator(".ui-toast")).toHaveCount(4);
     if (kind === "success") await expect(page.getByRole("status")).toHaveCount(4);
@@ -40,7 +40,7 @@ for (const kind of ["success", "error", "mixed"]) {
     }
     const point = await placeSaveUnderToast(page);
     await page.screenshot({ path: testInfo.outputPath(kind + "-toast-overlap.png") });
-    const save = page.locator(".st-edit-form").getByRole("button", { name: "Lưu", exact: true });
+    const save = page.locator(".st-edit-form").getByRole("button", { name: "Save", exact: true });
     // No forced click, programmatic submission, dismissal or timeout-based workaround.
     await save.click({ timeout: 1500 });
     await expect(page.getByRole("checkbox", { name: "Tên được lưu qua thông báo", exact: true })).toBeVisible();
@@ -66,11 +66,11 @@ test("stacked notifications retain readable copy and pointer/keyboard dismissal"
       getComputedStyle(text).visibility === "visible" && textBox.width > 0 && textBox.height > 0 &&
       text.scrollWidth <= text.clientWidth + 1;
   }))).toBe(true);
-  const close = page.getByRole("button", { name: "Đóng thông báo", exact: true });
+  const close = page.getByRole("button", { name: "Dismiss notification", exact: true });
   await close.first().click();
   await expect(close).toHaveCount(3);
   // Enter reaches a close control through normal Tab order.
-  await page.getByLabel("Tên công việc con", { exact: true }).focus();
+  await page.getByLabel("Subtask name", { exact: true }).focus();
   await page.keyboard.press("Tab");
   await expect(close.first()).toBeFocused();
   await page.keyboard.press("Enter");
@@ -90,6 +90,6 @@ test("success expires after six seconds and errors persist until dismissed", asy
   await expect(page.getByRole("alert")).toHaveCount(2);
   await page.clock.runFor(60000);
   await expect(page.getByRole("alert")).toHaveCount(2);
-  await page.getByRole("button", { name: "Đóng thông báo", exact: true }).first().click();
+  await page.getByRole("button", { name: "Dismiss notification", exact: true }).first().click();
   await expect(page.getByRole("alert")).toHaveCount(1);
 });

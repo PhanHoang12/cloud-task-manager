@@ -25,7 +25,7 @@ type Props = {
 };
 
 function formatDate(timestamp: number) {
-  return new Date(timestamp).toLocaleString("vi-VN", {
+  return new Date(timestamp).toLocaleString("en-US", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -57,12 +57,12 @@ export default function TaskComments({
     event.preventDefault();
     const content = text.trim();
     if (!content || pending || !canComment) return;
-    if (await run(() => create({ taskId, content }), "Đã gửi bình luận.", "Không gửi được bình luận.", "create")) setText("");
+    if (await run(() => create({ taskId, content }), "Comment sent.", "Could not send the comment.", "create")) setText("");
   }
 
   async function deleteComment(id: Id<"taskComments">) {
-    if (pending || !await confirm({ title: "Xóa bình luận?", description: "Bình luận này sẽ bị xóa. Bạn không thể hoàn tác thao tác này." })) return;
-    await run(() => remove({ commentId: id }), "Đã xóa bình luận.", "Không xóa được bình luận.", id);
+    if (pending || !await confirm({ title: "Delete comment?", description: "This comment will be deleted. This cannot be undone." })) return;
+    await run(() => remove({ commentId: id }), "Comment deleted.", "Could not delete the comment.", id);
   }
 
   return (
@@ -75,7 +75,7 @@ export default function TaskComments({
       >
         <span className="tc-toggle-left">
           <MessageCircle size={17} />
-          <span>Thảo luận</span>
+          <span>Discussion</span>
           <span className="tc-count">
             {comments?.length ?? "…"}
           </span>
@@ -91,19 +91,19 @@ export default function TaskComments({
         <div className="tc-content">
           <div className="tc-list">
             {comments === undefined ? (
-              <p className="tc-empty" role="status">Đang tải bình luận...</p>
+              <p className="tc-empty" role="status">Loading comments...</p>
             ) : comments.length === 0 ? (
               <div className="tc-empty">
                 <MessageCircle size={24} />
-                <p>Chưa có bình luận</p>
-                <span>Hãy bắt đầu cuộc thảo luận.</span>
+                <p>Start a conversation</p>
+                <span>Share an update, ask a question, or leave a note for the team.</span>
               </div>
             ) : (
               comments.map((comment) => {
                 const mine = comment.authorId === user?.id;
 
                 const authorName = getCommentAuthorName(comment.authorId, authorNames);
-                const authorInitial = authorNames?.get(comment.authorId)?.slice(0, 1).toLocaleUpperCase("vi-VN");
+                const authorInitial = authorNames?.get(comment.authorId)?.slice(0, 1).toLocaleUpperCase("en-US");
 
                 const canDelete = canModerate || mine;
 
@@ -151,8 +151,8 @@ export default function TaskComments({
                         >
                           <Trash2 size={12} />
                           {deletingId === comment._id
-                            ? "Đang xóa..."
-                            : "Xóa"}
+                            ? "Deleting..."
+                            : "Delete"}
                         </button>
                       )}
                     </div>
@@ -164,11 +164,12 @@ export default function TaskComments({
 
           {canComment && (
             <form className="tc-form" onSubmit={submit}>
+              <span className="tc-composer-heading">Add to the conversation</span>
               <textarea
                 className="tc-input"
                 disabled={pending!==null}
-                aria-label="Viết bình luận"
-                placeholder="Viết bình luận cho nhóm..."
+                aria-label="Write a comment"
+                placeholder="Leave a note for your team..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={2}
@@ -185,7 +186,7 @@ export default function TaskComments({
                   disabled={pending!==null || !text.trim()}
                 >
                   <Send size={15} />
-                  {busy ? "Đang gửi..." : "Gửi"}
+                  {busy ? "Sending..." : "Send"}
                 </button>
               </div>
             </form>

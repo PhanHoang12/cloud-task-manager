@@ -9,11 +9,11 @@ export function normalizeMemberName(value?: string | null) {
   return value?.trim().replace(/\s+/g, " ").normalize("NFC") ?? "";
 }
 function comparison(value: string) {
-  return value.toLocaleLowerCase("vi-VN");
+  return value.toLocaleLowerCase("en-US");
 }
 function selfLabel(viewer: AssigneeViewer) {
   const name = normalizeMemberName(viewer.fullName);
-  return name ? `${name} (Bạn)` : "Bạn";
+  return name ? `${name} (You)` : "You";
 }
 
 /** Presentation only: IDs are map keys, never visible fallback text. */
@@ -30,8 +30,8 @@ export function buildAssigneeLabels(
   }
   const candidates = members.map((member, index) => {
     const name = names[index];
-    if (member.userId === viewer.id) return name ? `${name} (Bạn)` : "Bạn";
-    const primary = name || "Thành viên chưa có tên";
+    if (member.userId === viewer.id) return name ? `${name} (You)` : "You";
+    const primary = name || "Unnamed member";
     const email = !name || counts.get(comparison(name))! > 1 ? normalizeMemberName(member.email) : "";
     return email ? `${primary} · ${email}` : primary;
   });
@@ -44,7 +44,7 @@ export function buildAssigneeLabels(
     const candidate = candidates[index];
     // A roster position disambiguates unavailable/shared emails without exposing ID fragments.
     const label = candidateCounts.get(comparison(candidate))! > 1
-      ? `${candidate} · Thành viên ${index + 1}`
+      ? `${candidate} · Member ${index + 1}`
       : candidate;
     return [member.userId, label];
   }));
@@ -56,9 +56,9 @@ export function getAssigneeLabel(
   membersLoaded: boolean,
   viewer: AssigneeViewer = {},
 ): string {
-  if (!userId) return "Chưa phân công";
+  if (!userId) return "Unassigned";
   const label = labels.get(userId);
   if (label) return label;
   if (userId === viewer.id) return selfLabel(viewer);
-  return membersLoaded ? "Thành viên không có trong danh sách" : "Đang tải người phụ trách…";
+  return membersLoaded ? "Member unavailable" : "Loading assignee…";
 }

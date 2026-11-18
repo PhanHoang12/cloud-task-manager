@@ -7,8 +7,8 @@ const viewerId = params.get("viewer") === "self" ? authorId : params.get("viewer
 const now = Date.UTC(2026, 9, 30, 0, 0, 0);
 type Profile = { fullName: string; accountName?: string };
 const profiles = new Map<string, Profile>([
-  [authorId, mode === "account" ? { fullName: "Người dùng", accountName: "Hoàng tài khoản" } :
-    mode === "blank" ? { fullName: "Người dùng" } : { fullName: "Nguyễn Hoàng", accountName: "Hoàng Clerk cũ" }],
+  [authorId, mode === "account" ? { fullName: "User", accountName: "Hoàng tài khoản" } :
+    mode === "blank" ? { fullName: "User" } : { fullName: "Nguyễn Hoàng", accountName: "Hoàng Clerk cũ" }],
   [otherId, { fullName: "Trần An", accountName: "An Clerk" }], [thirdId, { fullName: "Lê Bình" }],
 ]);
 if (mode === "missing") profiles.delete(authorId);
@@ -18,7 +18,7 @@ let revision = 0;
 const listeners = new Set<() => void>();
 const notify = () => { revision++; listeners.forEach(listener => listener()); };
 const identityName = (id: string) => id === authorId ? "Hoàng" : id === otherId ? "An Clerk" : "Bình Clerk";
-const persisted = { _id: "comment-persisted", taskId: "task-comment", projectId: "project-fixture", authorId, content: "Hiển thị tên thành viên", createdAt: now };
+const persisted = { _id: "comment-persisted", taskId: "task-comment", projectId: "project-fixture", authorId, content: "Hiển thị tên members", createdAt: now };
 const comments = [persisted], empty: never[] = [];
 const tasks = ["task-comment", "task-unrelated"].map((id, index) => ({
   _id: id, projectId: "project-fixture", title: index === 0 ? "Kiểm tra tên bình luận" : "Công việc thứ hai",
@@ -58,7 +58,7 @@ export function useQuery(reference: Reference, args: Record<string, unknown> = {
       return loading ? undefined : roster.map((userId, index) => {
         const profile = profiles.get(userId), custom = profile?.fullName.trim();
         return { _id: "member-" + index, userId, role: "member",
-          fullName: (custom && custom !== "Người dùng" ? custom : null) || profile?.accountName || (userId === viewerId ? identityName(viewerId) : null),
+          fullName: (custom && custom !== "User" ? custom : null) || profile?.accountName || (userId === viewerId ? identityName(viewerId) : null),
           email: "PRIVATE_EMAIL@example.invalid" };
       });
     case "profiles:me": {

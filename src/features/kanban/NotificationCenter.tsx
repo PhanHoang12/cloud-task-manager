@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import "./collaboration.css";
-import { getErrorMessage } from "../../lib/uiText";
+import { formatNotificationMessage, getErrorMessage } from "../../lib/uiText";
 import { useNonModalPopup } from "../../components/useNonModalPopup";
 import { getNotificationTarget, notificationNavigationError, type NotificationTarget } from "../../lib/notificationNavigation";
 
@@ -44,11 +44,11 @@ function formatTime(timestamp: number): string {
   const hour = minute * 60;
   const day = hour * 24;
 
-  if (difference < minute) return "Vừa xong";
-  if (difference < hour) return `${Math.floor(difference / minute)} phút trước`;
-  if (difference < day) return `${Math.floor(difference / hour)} giờ trước`;
-  if (difference < day * 7) return `${Math.floor(difference / day)} ngày trước`;
-  return new Date(timestamp).toLocaleDateString("vi-VN");
+  if (difference < minute) return "Just now";
+  if (difference < hour) return `${Math.floor(difference / minute)} min ago`;
+  if (difference < day) return `${Math.floor(difference / hour)} hr ago`;
+  if (difference < day * 7) return `${Math.floor(difference / day)} days ago`;
+  return new Date(timestamp).toLocaleDateString("en-US");
 }
 
 export default function NotificationCenter({ onNavigate }: { onNavigate?: (target: NotificationTarget, signal: AbortSignal) => Promise<boolean | void> }) {
@@ -131,7 +131,7 @@ export default function NotificationCenter({ onNavigate }: { onNavigate?: (targe
       }
     } catch (err) {
       if (!controller.signal.aborted) {
-        setError(!reading && target && onNavigate ? notificationNavigationError(err) : getErrorMessage(err, "Không thể đánh dấu thông báo đã đọc."));
+        setError(!reading && target && onNavigate ? notificationNavigationError(err) : getErrorMessage(err, "Could not mark the notification as read."));
       }
     } finally {
       if (navigationController.current === controller) {
@@ -147,7 +147,7 @@ export default function NotificationCenter({ onNavigate }: { onNavigate?: (targe
         ref={buttonRef}
         type="button"
         className={`notify-btn${open ? " notify-btn-active" : ""}`}
-        aria-label={loading ? "Thông báo, đang tải" : `Thông báo, ${unreadCount} chưa đọc`}
+        aria-label={loading ? "Notifications, loading" : `Notifications, ${unreadCount} unread`}
         aria-busy={loading}
         aria-expanded={open}
         aria-haspopup="dialog"
@@ -186,13 +186,13 @@ export default function NotificationCenter({ onNavigate }: { onNavigate?: (targe
         >
           <div className="notify-header">
             <div>
-              <h3 id={panelId + "-title"}>Thông báo</h3>
-              <p>{loading ? "Đang tải số thông báo chưa đọc…" : unreadCount ? `${unreadCount} thông báo chưa đọc` : "Bạn đã đọc hết thông báo"}</p>
+              <h3 id={panelId + "-title"}>Notifications</h3>
+              <p>{loading ? "Loading unread count…" : unreadCount ? `${unreadCount} unread notifications` : "You are all caught up"}</p>
             </div>
             <button
               type="button"
               className="notify-close"
-              aria-label="Đóng thông báo"
+              aria-label="Dismiss notification"
               onClick={dismiss}
             >
               <X size={18} />
@@ -200,17 +200,17 @@ export default function NotificationCenter({ onNavigate }: { onNavigate?: (targe
           </div>
 
           {error && <p className="notify-error" role="alert">{error}</p>}
-          {openingId && <p className="notify-navigation-status" role="status">Đang mở nội dung liên quan…</p>}
+          {openingId && <p className="notify-navigation-status" role="status">Opening the linked content…</p>}
 
-          {loading && <p className="notify-navigation-status" role="status">Đang tải thông báo...</p>}
+          {loading && <p className="notify-navigation-status" role="status">Loading notifications...</p>}
           <div className="notify-list" aria-busy={loading}>
             {notifications === undefined ? (
               null
             ) : notifications.length === 0 ? (
               <div className="notify-empty">
                 <div className="notify-empty-icon"><CheckCheck size={27} /></div>
-                <strong>Chưa có thông báo</strong>
-                <p>Các cập nhật về công việc và dự án sẽ xuất hiện ở đây.</p>
+                <strong>A little quiet, for now</strong>
+                <p>Task updates and project conversations will appear here.</p>
               </div>
             ) : (
               notifications.map((item) => (
@@ -218,15 +218,16 @@ export default function NotificationCenter({ onNavigate }: { onNavigate?: (targe
                   type="button"
                   key={item._id}
                   className={`notify-item${item.isRead ? "" : " unread"}`}
-                  aria-label={`${item.message}${item.isRead ? "" : ", chưa đọc"}${onNavigate && getNotificationTarget(item) ? getNotificationTarget(item)?.taskId ? ", mở công việc" : ", mở dự án" : ""}`}
+                  aria-label={`${formatNotificationMessage(item.message)}${item.isRead ? "" : ", unread"}${onNavigate && getNotificationTarget(item) ? getNotificationTarget(item)?.taskId ? ", open task" : ", open project" : ""}`}
                   aria-busy={openingId === item._id}
                   onClick={() => void handleActivate(item)}
                 >
                   <span className={`notify-icon notify-icon-${item.kind}`}>{getNotificationIcon(item.kind)}</span>
                   <span className="notify-content">
-                    <span className="notify-message">{item.message}</span>
+                    <span className="notify-category">{({ comment: "Discussion", assigned: "Assignment", deadline_upcoming: "Due soon", deadline_overdue: "Overdue" })[item.kind]}</span>
+                    <span className="notify-message">{formatNotificationMessage(item.message)}</span>
                     <span className="notify-time">{formatTime(item.createdAt)}</span>
-                    {onNavigate && getNotificationTarget(item) && <span className="notify-destination">{getNotificationTarget(item)?.taskId ? "Mở công việc" : "Mở dự án"}</span>}
+                    {onNavigate && getNotificationTarget(item) && <span className="notify-destination">{getNotificationTarget(item)?.taskId ? "Open task" : "Open project"}</span>}
                   </span>
                   {!item.isRead && <span className="notify-dot" aria-hidden="true" />}
                 </button>

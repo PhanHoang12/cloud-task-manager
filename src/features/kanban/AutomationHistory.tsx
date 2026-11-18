@@ -6,7 +6,7 @@ import "./automation-history.css";
 type RunStatus = "running" | "completed" | "failed";
 
 function formatDate(timestamp: number) {
-  return new Date(timestamp).toLocaleString("vi-VN", {
+  return new Date(timestamp).toLocaleString("en-US", {
     timeZone: "Asia/Ho_Chi_Minh",
     day: "2-digit",
     month: "2-digit",
@@ -34,7 +34,7 @@ function formatDuration(
     return `${milliseconds} ms`;
   }
 
-  return `${(milliseconds / 1000).toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} s`;
+  return `${(milliseconds / 1000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} s`;
 }
 
 function StatusBadge({
@@ -43,9 +43,9 @@ function StatusBadge({
   status: RunStatus;
 }) {
   const labels: Record<RunStatus, string> = {
-    running: "Đang chạy",
-    completed: "Hoàn thành",
-    failed: "Thất bại",
+    running: "Running",
+    completed: "Done",
+    failed: "Failed",
   };
 
   return (
@@ -75,52 +75,51 @@ export default function AutomationHistory() {
   return (
     <section
       className="ah-card"
-      aria-label="Lịch sử nhắc hạn tự động"
+      aria-label="Automation history"
     >
       <div className="ah-header">
         <div>
           <span className="ah-eyebrow">
-            TỰ ĐỘNG HÓA / LỊCH SỬ THỰC HIỆN
+            AUTOMATION / RUN HISTORY
           </span>
 
-          <h3>Lịch sử nhắc hạn tự động</h3>
+          <h3>Automation history</h3>
 
           <p className="ah-muted">
-            Theo dõi 20 lượt kiểm tra hạn hoàn thành gần nhất
-            trong toàn hệ thống.
+            The 20 most recent deadline checks across the system.
           </p>
         </div>
 
         <span className="ah-realtime">
-          ● Cập nhật tự động
+          Live updates
         </span>
       </div>
 
       {latest && (
         <div className="ah-summary">
           <div>
-            <span>Lần chạy gần nhất</span>
+            <span>Latest run</span>
             <strong>
               {formatDate(latest.startedAt)}
             </strong>
           </div>
 
           <div>
-            <span>Nguồn thực thi</span>
+            <span>Triggered by</span>
             <strong>
               {latest.source === "manual"
-                ? "Thủ công"
-                : "Theo lịch"}
+                ? "Manual"
+                : "Scheduled"}
             </strong>
           </div>
 
           <div>
-            <span>Trạng thái</span>
+            <span>Status</span>
             <StatusBadge status={latest.status} />
           </div>
 
           <div>
-            <span>Công việc đã kiểm tra</span>
+            <span>Tasks checked</span>
             <strong>{latest.tasksScanned}</strong>
           </div>
         </div>
@@ -128,25 +127,25 @@ export default function AutomationHistory() {
 
       {runs.length === 0 ? (
         <p className="ah-empty">
-          Chưa có lịch sử nhắc hạn tự động.
+          No deadline checks have run yet.
         </p>
       ) : (
         <div
           className="ah-table-wrap"
           tabIndex={0}
-          aria-label="Bảng lịch sử nhắc hạn tự động"
+          aria-label="Deadline automation run history"
         >
           <table className="ah-table">
             <thead>
               <tr>
-                <th>Thời gian bắt đầu</th>
-                <th>Nguồn</th>
-                <th>Trạng thái</th>
+                <th>Started</th>
+                <th>Source</th>
+                <th>Status</th>
                 <th>Trang</th>
-                <th>Công việc đã kiểm tra</th>
-                <th>Quá hạn</th>
-                <th>Cảnh báo mới</th>
-                <th>Thời lượng</th>
+                <th>Tasks checked</th>
+                <th>Overdue</th>
+                <th>New alerts</th>
+                <th>Duration</th>
               </tr>
             </thead>
 
@@ -157,8 +156,8 @@ export default function AutomationHistory() {
 
                   <td>
                     {run.source === "manual"
-                      ? "Thủ công"
-                      : "Theo lịch"}
+                      ? "Manual"
+                      : "Scheduled"}
                   </td>
 
                   <td>
@@ -168,7 +167,7 @@ export default function AutomationHistory() {
                         className="ah-error"
                         title={run.errorMessage}
                       >
-                        Có chi tiết lỗi
+                        Error details available
                       </span>
                     )}
                   </td>
@@ -197,8 +196,7 @@ export default function AutomationHistory() {
       )}
 
       <p className="ah-footnote">
-        Lịch sử dành cho quản trị viên, áp dụng cho toàn hệ thống.
-        Thời gian hiển thị theo múi giờ Việt Nam.
+        Admin-only history across the system. Times shown in Vietnam time (UTC+7).
       </p>
     </section>
   );

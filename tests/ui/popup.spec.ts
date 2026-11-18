@@ -1,10 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 
 const fixture = "/tests/ui/popup-fixture.html";
-const accountTrigger = (page: Page) => page.getByRole("button", { name: "Mở trình đơn tài khoản", exact: true });
-const accountPopup = (page: Page) => page.getByRole("group", { name: "Tùy chọn tài khoản", exact: true });
-const notifyTrigger = (page: Page) => page.getByRole("button", { name: /^Thông báo, (?:\d+ chưa đọc|đang tải)$/ });
-const notifyPopup = (page: Page) => page.getByRole("dialog", { name: "Thông báo", exact: true });
+const accountTrigger = (page: Page) => page.getByRole("button", { name: "Open account menu", exact: true });
+const accountPopup = (page: Page) => page.getByRole("group", { name: "Account options", exact: true });
+const notifyTrigger = (page: Page) => page.getByRole("button", { name: /^Notifications, (?:\d+ unread|loading)$/ });
+const notifyPopup = (page: Page) => page.getByRole("dialog", { name: "Notifications", exact: true });
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/node_modules/.vite/deps/convex_react.js*", route => route.fulfill({
@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
 
 async function board(page: Page, query = "") {
   await page.goto(fixture + query);
-  await page.getByRole("button", { name: "Mở dự án Dự án kiểm tra", exact: true }).click();
+  await page.getByRole("button", { name: "Open project Dự án kiểm tra", exact: true }).click();
   await expect(notifyTrigger(page)).toBeVisible();
 }
 
@@ -35,7 +35,7 @@ for (const key of ["Enter", "Space"]) {
     await expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     await expect(trigger).toHaveAttribute("aria-controls", (await popup.getAttribute("id"))!);
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(popup.getByRole("button", { name: "Đóng thông báo", exact: true })).toBeFocused();
+    await expect(popup.getByRole("button", { name: "Dismiss notification", exact: true })).toBeFocused();
     expect(await popup.evaluate(element => element.parentElement === document.body)).toBe(true);
     expect(await page.evaluate(() => document.querySelectorAll("dialog:modal, [inert]").length)).toBe(0);
     expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe("");
@@ -60,7 +60,7 @@ for (const key of ["Enter", "Space"]) {
     await expect(trigger).toHaveAttribute("aria-controls", (await popup.getAttribute("id"))!);
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
     await expect(popup).not.toHaveAttribute("aria-modal", "true");
-    await expect(popup.getByRole("button", { name: "Chỉnh sửa hồ sơ", exact: true })).toBeFocused();
+    await expect(popup.getByRole("button", { name: "Edit profile", exact: true })).toBeFocused();
     await expect(page.locator(".ctp-profile-backdrop")).toHaveJSProperty("tabIndex", -1);
     if (key === "Enter") await page.screenshot({ path: testInfo.outputPath("account-keyboard.png"), animations: "disabled" });
     await page.keyboard.press("Escape");
@@ -74,7 +74,7 @@ test("M2 portaled notifications keep forward and reverse Tab beside their trigge
   await board(page);
   await notifyTrigger(page).press("Enter");
   const popup = notifyPopup(page);
-  const close = popup.getByRole("button", { name: "Đóng thông báo", exact: true });
+  const close = popup.getByRole("button", { name: "Dismiss notification", exact: true });
   const items = popup.locator(".notify-item");
   await page.keyboard.press("Tab");
   await expect(items.nth(0)).toBeFocused();
@@ -88,8 +88,8 @@ test("M2 portaled notifications keep forward and reverse Tab beside their trigge
   await expect(notifyTrigger(page)).toBeFocused();
   await expect(popup).toHaveCount(0);
   await page.keyboard.press("Shift+Tab");
-  const before = page.getByRole("button", { name: "Mở điều hướng", exact: true });
-  await expect(await before.isVisible() ? before : page.getByRole("navigation").getByRole("button", { name: "Hồ sơ cá nhân", exact: true })).toBeFocused();
+  const before = page.getByRole("button", { name: "Open navigation", exact: true });
+  await expect(await before.isVisible() ? before : page.getByRole("navigation").getByRole("button", { name: "Profile", exact: true })).toBeFocused();
   await notifyTrigger(page).press("Enter");
   for (let index = 0; index < 3; index++) {
     await page.keyboard.press("Tab");
@@ -107,9 +107,9 @@ test("M2 account Tab exits without visiting the backdrop or trapping focus", asy
   await board(page);
   await accountTrigger(page).press("Enter");
   const popup = accountPopup(page);
-  const profile = popup.getByRole("button", { name: "Chỉnh sửa hồ sơ", exact: true });
-  const security = popup.getByRole("button", { name: "Bảo mật và đăng nhập", exact: true });
-  const logout = popup.getByRole("button", { name: "Đăng xuất", exact: true });
+  const profile = popup.getByRole("button", { name: "Edit profile", exact: true });
+  const security = popup.getByRole("button", { name: "Security & sign-in", exact: true });
+  const logout = popup.getByRole("button", { name: "Sign out", exact: true });
   await page.keyboard.press("Tab");
   await expect(security).toBeFocused();
   await page.evaluate(() => window.popupRegression.changeAccountName("Tên tài khoản vừa cập nhật"));
@@ -131,15 +131,15 @@ test("M2 account Tab exits without visiting the backdrop or trapping focus", asy
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: /Trở về danh sách dự án/ })).toBeFocused();
+  await expect(page.getByRole("button", { name: /Back to projects/ })).toBeFocused();
   await expect(popup).toHaveCount(0);
 });
 
 test("M2 click-outside dismissal preserves notification navigation and the account backdrop", async ({ page }) => {
   await board(page);
   // Navigation remains an exposed outside action across the compact board layouts.
-  const personal = page.getByRole("navigation").getByRole("button", { name: "Công việc cá nhân", exact: true });
-  if (!await personal.isVisible()) await page.getByRole("button", { name: "Mở điều hướng", exact: true }).click();
+  const personal = page.getByRole("navigation").getByRole("button", { name: "My tasks", exact: true });
+  if (!await personal.isVisible()) await page.getByRole("button", { name: "Open navigation", exact: true }).click();
   await notifyTrigger(page).click();
   await personal.click();
   await expect(notifyPopup(page)).toHaveCount(0);
@@ -156,7 +156,7 @@ test("M2 click-outside dismissal preserves notification navigation and the accou
 test("M2 leaving a notification popup does not steal focus from outside controls or an H1 dialog", async ({ page }) => {
   await board(page);
   await notifyTrigger(page).press("Enter");
-  const create = page.getByRole("button", { name: "+ Công việc mới", exact: true });
+  const create = page.getByRole("button", { name: "New task", exact: true });
   await create.focus();
   await expect(notifyPopup(page)).toHaveCount(0);
   await expect(create).toBeFocused();
@@ -169,8 +169,8 @@ test("M2 leaving a notification popup does not steal focus from outside controls
   });
   if (covered) await create.press("Enter");
   else await create.click();
-  const dialog = page.getByRole("dialog", { name: "Tạo công việc", exact: true });
-  await expect(dialog.getByLabel("Tiêu đề *", { exact: true })).toBeFocused();
+  const dialog = page.getByRole("dialog", { name: "Create task", exact: true });
+  await expect(dialog.getByLabel("Title *", { exact: true })).toBeFocused();
   await expect(notifyPopup(page)).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -182,12 +182,12 @@ test("M2 switching between account and notification popups leaves only the activ
   await notifyTrigger(page).press("Enter");
   await accountTrigger(page).click();
   await expect(notifyPopup(page)).toHaveCount(0);
-  await expect(accountPopup(page).getByRole("button", { name: "Chỉnh sửa hồ sơ", exact: true })).toBeFocused();
+  await expect(accountPopup(page).getByRole("button", { name: "Edit profile", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(accountTrigger(page)).toBeFocused();
   await notifyTrigger(page).press("Enter");
   await expect(accountPopup(page)).toHaveCount(0);
-  await expect(notifyPopup(page).getByRole("button", { name: "Đóng thông báo", exact: true })).toBeFocused();
+  await expect(notifyPopup(page).getByRole("button", { name: "Dismiss notification", exact: true })).toBeFocused();
 });
 
 test("M2 notification actions keep focus through query updates and preserve original mutation arguments", async ({ page }) => {
@@ -197,13 +197,13 @@ test("M2 notification actions keep focus through query updates and preserve orig
   await page.keyboard.press("Tab");
   await expect(items.nth(0)).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(notifyTrigger(page)).toHaveAccessibleName("Thông báo, 1 chưa đọc");
+  await expect(notifyTrigger(page)).toHaveAccessibleName("Notifications, 1 unread");
   await expect(items.nth(0)).toBeFocused();
   await items.nth(2).press("Enter");
   expect(await page.evaluate(() => window.popupRegression.calls.filter(call => call.name === "notifications:markRead"))).toEqual([
     { name: "notifications:markRead", args: { notificationId: "notice-one" } },
   ]);
-  await notifyPopup(page).getByRole("button", { name: "Đóng thông báo", exact: true }).click();
+  await notifyPopup(page).getByRole("button", { name: "Dismiss notification", exact: true }).click();
   await expect(notifyTrigger(page)).toBeFocused();
 });
 
@@ -211,9 +211,9 @@ for (const state of ["empty", "loading"]) {
   test(`M2 notification ${state} state retains a focusable close action and Tab exit`, async ({ page }) => {
     await board(page, "?notifications=" + state);
     await notifyTrigger(page).press("Enter");
-    const close = notifyPopup(page).getByRole("button", { name: "Đóng thông báo", exact: true });
+    const close = notifyPopup(page).getByRole("button", { name: "Dismiss notification", exact: true });
     await expect(close).toBeFocused();
-    await expect(notifyPopup(page)).toContainText(state === "empty" ? "Chưa có thông báo" : "Đang tải thông báo...");
+    await expect(notifyPopup(page)).toContainText(state === "empty" ? "A little quiet, for now" : "Loading notifications...");
     if (state === "loading") {
       await page.keyboard.press("Tab");
       await expect(accountTrigger(page)).toBeFocused();
@@ -238,7 +238,7 @@ test("M2 notification failures preserve keyboard recovery and existing error fee
   await notifyTrigger(page).press("Enter");
   const item = notifyPopup(page).locator(".notify-item").first();
   await item.press("Enter");
-  await expect(notifyPopup(page).getByRole("alert")).toContainText("Không thể đánh dấu thông báo đã đọc.");
+  await expect(notifyPopup(page).getByRole("alert")).toContainText("Could not mark the notification as read.");
   await expect(item).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(notifyTrigger(page)).toBeFocused();
@@ -246,14 +246,14 @@ test("M2 notification failures preserve keyboard recovery and existing error fee
   await expect(notifyPopup(page).getByRole("alert")).toHaveCount(0);
   await page.evaluate(() => { window.popupRegression.failRead = false; });
   await notifyPopup(page).locator(".notify-item").first().press("Enter");
-  await expect(notifyTrigger(page)).toHaveAccessibleName("Thông báo, 1 chưa đọc");
+  await expect(notifyTrigger(page)).toHaveAccessibleName("Notifications, 1 unread");
 });
 
 test("M2 account profile, security and logout functions still execute without focus theft", async ({ page }) => {
   await board(page);
   await accountTrigger(page).press("Enter");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Hồ sơ cá nhân", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Profile", exact: true })).toBeVisible();
   await expect(accountPopup(page)).toHaveCount(0);
 
   await board(page);

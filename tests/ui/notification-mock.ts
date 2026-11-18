@@ -19,12 +19,12 @@ let notifications: Notice[] = [
     _id: "notice-" + kind, kind, message: ({comment:"Bình luận liên quan",assigned:"Công việc được giao",deadline_upcoming:"Công việc sắp đến hạn",deadline_overdue:"Công việc quá hạn"})[kind],
     projectId: pb._id, taskId: task._id, isRead: false, createdAt: now,
   })),
-  { _id: "notice-project", kind: "comment", message: "Cập nhật chỉ có dự án", projectId: pb._id, isRead: false, createdAt: now },
+  { _id: "notice-project", kind: "comment", message: "Cập nhật chỉ có projects", projectId: pb._id, isRead: false, createdAt: now },
   { _id: "notice-no-ids", kind: "comment", message: "Chỉ có nội dung thông báo", isRead: false, createdAt: now },
-  { _id: "notice-task-only", kind: "assigned", message: "Thông báo chỉ có mã công việc", taskId: task._id, isRead: false, createdAt: now },
-  { _id: "notice-project-gone", kind: "comment", message: "Liên kết dự án không còn khả dụng", projectId: "project-missing", taskId: "task-missing", isRead: false, createdAt: now },
+  { _id: "notice-task-only", kind: "assigned", message: "Notifications chỉ có mã công việc", taskId: task._id, isRead: false, createdAt: now },
+  { _id: "notice-project-gone", kind: "comment", message: "Liên kết projects không còn khả dụng", projectId: "project-missing", taskId: "task-missing", isRead: false, createdAt: now },
   { _id: "notice-task-gone", kind: "comment", message: "Liên kết công việc không còn khả dụng", projectId: pb._id, taskId: "task-missing", isRead: false, createdAt: now },
-  { _id: "notice-read", kind: "assigned", message: "Thông báo đã đọc có liên kết", projectId: pb._id, taskId: task._id, isRead: true, createdAt: now },
+  { _id: "notice-read", kind: "assigned", message: "Notifications đã đọc có liên kết", projectId: pb._id, taskId: task._id, isRead: true, createdAt: now },
 ];
 const member = { _id: "member", userId, role: "owner", fullName: "Sinh viên kiểm tra", email: "student@example.invalid" };
 const account = { clerk: { name: member.fullName, email: member.email }, profile: { fullName: member.fullName } };
@@ -99,7 +99,7 @@ export function useMutation(reference: Reference) {
     window.notificationRegression.mutations.push({ name, args });
     if (name === "profiles:syncIdentity") return;
     if (name !== "notifications:markRead") throw new Error("Unexpected notification fixture mutation");
-    if (mode === "read-error") throw new Error("Không thể đánh dấu thông báo đã đọc.");
+    if (mode === "read-error") throw new Error("Could not mark the notification as read.");
     notifications = notifications.map(item => item._id === args.notificationId ? { ...item, isRead: true } : item);
     notify();
   });

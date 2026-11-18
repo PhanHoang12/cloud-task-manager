@@ -1,0 +1,49 @@
+/* Presentation refinements preserve M10 geometry, focus and semantic tokens. */
+.ctp-shell .ctp-brand-mark { background: var(--action-primary); border-radius: 11px; }
+.ctp-shell .ctp-brand { font-weight: 700; }
+.ctp-shell .ctp-brand small { font-weight: 500; letter-spacing: .9px; color: #b5c2d9; }
+.ctp-shell .ctp-nav-item { border-radius: 10px; font-weight: 600; transition: background .15s, color .15s; }
+.ctp-shell .ctp-nav-item:hover { background: #20314d; }
+.ctp-shell .ctp-nav-item.is-active { background: #283e62; box-shadow: inset 3px 0 0 #a6b8ff; }
+.ctp-shell .ctp-nav-item.is-active > svg { color: #c5d5ff; }
+.ctp-shell .ctp-sidebar-note { background: #192941; border-color: #30425f; color: #c0cde1; }
+.ctp-shell .ctp-header-overline { font-weight: 600; letter-spacing: 1.25px; }
+.ctp-shell .ctp-header-text strong { font-weight: 650; letter-spacing: -.35px; }
+.ctp-shell .ctp-profile-trigger { border-radius: var(--radius-control); border-color: transparent; background: var(--surface-subtle); }
+.ctp-shell .ctp-profile-trigger:hover { background: var(--surface-hover); border-color: var(--border-hover); }
+.ctp-shell .ctp-profile-name { font-weight: 600; }
+.ctp-shell .ctp-profile-dropdown { border-color: var(--border-default); }
+.ctp-shell .ws-project-icon { background: var(--surface-hover); color: var(--action-primary); }
+.ctp-shell .ws-project-card { background: var(--surface-default); border-color: var(--border-default); }
+.ctp-shell .ws-project-card:hover, .ctp-shell .ws-project-card:focus-within { border-color: var(--border-hover); background: var(--surface-subtle); }
+.ctp-shell .ws-card-foot { border-top-style: dashed; }
+.ctp-shell .ws-role { background: var(--surface-hover); color: var(--action-primary-hover); }
+.ctp-shell .ws-active { background: var(--surface-hover); color: var(--action-primary-hover); }
+.ctp-shell .ws-completed { background: var(--surface-success); color: var(--text-success); }
+.ctp-shell .ws-archived { background: #f1f3f6; }
+.ctp-shell .wo-summary .wo-metric { background: var(--surface-default); }
+.ctp-shell .wo-summary .wo-metric[aria-pressed="true"] { background: var(--surface-hover); }
+.ctp-shell .wo-analytics > summary { background: var(--surface-default); }
+.ctp-shell .wo-analytics > summary:hover { background: var(--surface-subtle); }
+.ctp-shell .kb-column { background: #eef2f7; }
+.ctp-shell .kb-column-title > strong { letter-spacing: -.2px; }
+.ctp-shell .kb-card { border-color: var(--border-default); }
+.ctp-shell .kb-card:hover, .ctp-shell .kb-card:focus-within { border-color: var(--border-hover); }
+.ctp-shell .kb-card h3 { font-weight: 650; }
+.ctp-shell .kb-card .kb-priority { border-radius: 5px; }
+.ctp-shell .tc-bubble { background: var(--surface-subtle); }
+.ctp-shell .profile-side { background: var(--surface-subtle); }
+.ctp-shell .profile-overline { color: var(--text-secondary); letter-spacing: 1.2px; }
+.ctp-shell .profile-card h2 { letter-spacing: -.4px; }
+.ctp-shell .personal-dashboard .wave { color: var(--action-primary); }
+.ctp-shell .personal-dashboard .filter.selected { background: var(--surface-hover); }
+.ctp-shell .personal-dashboard .task:hover { background: var(--surface-subtle); }
+.ctp-shell .personal-dashboard .priority { border-radius: 5px; }
+.ctp-shell .personal-dashboard .stat strong { font-variant-numeric: tabular-nums; }
+.ctp-shell .ws-empty > svg, .ctp-shell .personal-dashboard .empty > svg { color: var(--action-primary); }
+@media (min-width: 761px) and (max-width: 1050px) {
+  .ctp-shell .ws-heading > button, .ctp-shell .ws-section-head > button { flex-shrink: 0; white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctp-shell .ctp-nav-item { transition: none; }
+}

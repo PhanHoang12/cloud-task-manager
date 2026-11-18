@@ -14,7 +14,7 @@ const seedMembers = [
   { _id: "m4", userId: "user_blank_a_PRIVATE", role: "member", fullName: null, email: null },
   { _id: "m5", userId: "user_blank_b_PRIVATE", role: "member", fullName: " ", email: null },
   { _id: "m6", userId: "user_long_PRIVATE", role: "member", fullName: "Nguyễn Thị Minh Anh với tên hiển thị dài để kiểm tra xuống dòng và khả năng đọc trên màn hình nhỏ", email: "long@example.invalid" },
-  { _id: "m7", userId: "user_viewer_PRIVATE", role: "viewer", fullName: "Người xem dự án", email: "viewer@example.invalid" },
+  { _id: "m7", userId: "user_viewer_PRIVATE", role: "viewer", fullName: "Viewer projects", email: "viewer@example.invalid" },
 ];
 let members: typeof seedMembers | undefined = mode === "loading" ? undefined : mode === "empty" ? [] : seedMembers;
 const firstAssignee = mode === "removed" ? "user_removed_PRIVATE" : mode === "viewer-assignee" ? "user_viewer_PRIVATE" : "user_an_a_PRIVATE";
@@ -23,7 +23,7 @@ let tasks = [
   { _id: "task-self", title: "Công việc của tôi", assigneeId: currentId },
   { _id: "task-long", title: "Công việc tên dài", assigneeId: "user_long_PRIVATE" },
   { _id: "task-none", title: "Công việc chưa phân công", assigneeId: undefined },
-].map((task, index) => ({ ...task, projectId: "project-fixture", description: "Mô tả công việc",
+].map((task, index) => ({ ...task, projectId: "project-fixture", description: "Description công việc",
   priority: "medium", status: "todo", position: index, createdBy: currentId, createdAt: now }));
 let revision = 0;
 const listeners = new Set<() => void>();

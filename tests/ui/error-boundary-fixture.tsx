@@ -47,14 +47,14 @@ function Primary() {
     <h2>Đã tải màn hình</h2>
     <button type="button" className="ui-button ui-primary" onClick={() => setOpen(true)}>Mở hộp thoại</button>
     {open && <ModalDialog label="Kiểm tra modal" className="overlay" busy={false} onDismiss={() => setOpen(false)}>
-      <form className="modal"><label>Tiêu đề<input /></label><button type="button" className="ui-button ui-secondary" onClick={() => setOpen(false)}>Đóng</button></form>
+      <form className="modal"><label>Tiêu đề<input /></label><button type="button" className="ui-button ui-secondary" onClick={() => setOpen(false)}>Close</button></form>
     </ModalDialog>}
   </section>;
 }
 function Secondary() {
   window.boundarySecondaryRenders++;
   if (!window.boundarySecondaryHealthy) throw new Error("SECRET_TOKEN secondary query failure");
-  return <span>Tài khoản hoạt động</span>;
+  return <span>Account hoạt động</span>;
 }
 function Fixture() {
   const [view, setView] = useState("failed");
@@ -75,8 +75,8 @@ function Fixture() {
       </nav>
     </aside>
     <div className="ctp-right">
-      <header className="ctp-header"><div className="ctp-header-text"><strong>Không gian và dự án</strong></div>
-        <div className="ctp-header-account"><ScreenErrorBoundary scope="Tài khoản" resetKey={view} compact allowReload><Secondary /></ScreenErrorBoundary></div>
+      <header className="ctp-header"><div className="ctp-header-text"><strong>Workspaces & projects</strong></div>
+        <div className="ctp-header-account"><ScreenErrorBoundary scope="Account" resetKey={view} compact allowReload><Secondary /></ScreenErrorBoundary></div>
       </header>
       <main className="ctp-content">
         <section style={{ padding: 20 }}><label>Ghi chú độc lập<input value={note} onChange={event => setNote(event.target.value)} /></label><button className="ui-button ui-secondary" onClick={() => setCount(value => value + 1)}>Thao tác độc lập</button><output aria-label="Số thao tác">{count}</output></section>

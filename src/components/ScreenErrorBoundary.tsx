@@ -40,16 +40,16 @@ function failureKind(error: unknown): FailureKind {
 
 const guidance = {
   authentication: {
-    title: "Không thể xác minh tài khoản",
-    message: "Thông tin đăng nhập chưa được xác thực. Hãy kiểm tra phiên đăng nhập hoặc tải lại trang. Nếu lỗi vẫn tiếp diễn, hãy liên hệ quản trị viên.",
+    title: "Could not verify your account",
+    message: "Your sign-in could not be verified. Check your session or reload the page. If this continues, contact your administrator.",
   },
   permission: {
-    title: "Không thể truy cập nội dung",
-    message: "Nội dung có thể không còn khả dụng với quyền truy cập hiện tại. Hãy chọn mục khác hoặc liên hệ chủ sở hữu để kiểm tra quyền truy cập.",
+    title: "You cannot access this content",
+    message: "This content may no longer be available with your current permissions. Choose another item or ask the owner to check your access.",
   },
   unknown: {
-    title: "Không thể hiển thị nội dung",
-    message: "Không thể tải hoặc hiển thị mục này. Nội dung có thể tạm thời không khả dụng hoặc quyền truy cập đã thay đổi. Bạn có thể thử lại hoặc chọn mục khác.",
+    title: "We could not display this content",
+    message: "This item may be temporarily unavailable or your access may have changed. Try again or choose another item.",
   },
 };
 
@@ -73,9 +73,9 @@ function FailureNotice({ error, scope, onRetry, onReturn, returnLabel, compact, 
     <p className="ui-error-scope">{scope}</p>
     <p id={id + "-description"}>{copy.message}</p>
     <div className="ui-error-actions">
-      <button type="button" className="ui-button ui-primary" onClick={onRetry}>Thử lại</button>
-      {onReturn && <button type="button" className="ui-button ui-secondary" onClick={onReturn}>{returnLabel ?? "Quay lại"}</button>}
-      {allowReload && <button type="button" className="ui-button ui-secondary" onClick={() => window.location.reload()}>Tải lại trang</button>}
+      <button type="button" className="ui-button ui-primary" onClick={onRetry}>Try again</button>
+      {onReturn && <button type="button" className="ui-button ui-secondary" onClick={onReturn}>{returnLabel ?? "Go back"}</button>}
+      {allowReload && <button type="button" className="ui-button ui-secondary" onClick={() => window.location.reload()}>Reload page</button>}
     </div>
   </section>;
 }

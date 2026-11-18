@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { createElement, useEffect, useSyncExternalStore } from "react";
 // Browser-only data for the actual shared App and existing screens.
 const params = new URLSearchParams(location.search);
 const mode = params.get("target");
@@ -23,12 +23,12 @@ let notifications: Notice[] = [
     _id: "notice-" + kind, kind, message: ({comment:"Bình luận liên quan",assigned:"Công việc được giao",deadline_upcoming:"Công việc sắp đến hạn",deadline_overdue:"Công việc quá hạn"})[kind],
     projectId: pb._id, taskId: task._id, isRead: false, createdAt: now,
   })),
-  { _id: "notice-project", kind: "comment", message: "Cập nhật chỉ có dự án", projectId: pb._id, isRead: false, createdAt: now },
+  { _id: "notice-project", kind: "comment", message: "Cập nhật chỉ có projects", projectId: pb._id, isRead: false, createdAt: now },
   { _id: "notice-no-ids", kind: "comment", message: "Chỉ có nội dung thông báo", isRead: false, createdAt: now },
-  { _id: "notice-task-only", kind: "assigned", message: "Thông báo chỉ có mã công việc", taskId: task._id, isRead: false, createdAt: now },
-  { _id: "notice-project-gone", kind: "comment", message: "Liên kết dự án không còn khả dụng", projectId: "project-missing", taskId: "task-missing", isRead: false, createdAt: now },
+  { _id: "notice-task-only", kind: "assigned", message: "Notifications chỉ có mã công việc", taskId: task._id, isRead: false, createdAt: now },
+  { _id: "notice-project-gone", kind: "comment", message: "Liên kết projects không còn khả dụng", projectId: "project-missing", taskId: "task-missing", isRead: false, createdAt: now },
   { _id: "notice-task-gone", kind: "comment", message: "Liên kết công việc không còn khả dụng", projectId: pb._id, taskId: "task-missing", isRead: false, createdAt: now },
-  { _id: "notice-read", kind: "assigned", message: "Thông báo đã đọc có liên kết", projectId: pb._id, taskId: task._id, isRead: true, createdAt: now },
+  { _id: "notice-read", kind: "assigned", message: "Notifications đã đọc có liên kết", projectId: pb._id, taskId: task._id, isRead: true, createdAt: now },
 ];
 const member = { _id: "member", userId, role: "owner", fullName: "Sinh viên kiểm tra", email: "student@example.invalid" };
 let account = { clerk: { name: member.fullName, email: member.email }, profile: { fullName: member.fullName } };
@@ -80,7 +80,7 @@ window.experienceRegression = {
   },
   setLoading: (names, active) => { for (const name of names) active ? loading.add(name) : loading.delete(name); notify(); },
   activeQueries: {}, signOutCalls: 0,
-  switchIdentity: () => { activeUserId = "other-fixture"; workspaces = [wa]; personalTasks = []; notifications = []; account = { clerk: { name: "Tài khoản khác", email: "other@example.invalid" }, profile: { fullName: "Tài khoản khác" } }; notify(); },
+  switchIdentity: () => { activeUserId = "other-fixture"; workspaces = [wa]; personalTasks = []; notifications = []; account = { clerk: { name: "Account khác", email: "other@example.invalid" }, profile: { fullName: "Account khác" } }; notify(); },
   emptyData: scope => { if (scope === "projects") projectsB = []; else { personalTasks = []; tasksB = []; subtasks = []; notifications = []; summaries = { ...summaries, tasks: { total: 0, completed: 0, normal: 0, overdue: 0, upcoming: 0, withoutDeadline: 0 } }; } notify(); },
   failQuery: (name, active) => { active ? failures.add(name) : failures.delete(name); notify(); },
   revokeWorkspace: () => { workspaces = [wa]; notify(); },
@@ -168,7 +168,7 @@ export function useMutation(reference: Reference) {
       notify();
       return;
     }
-    if (mode === "read-error") throw new Error("Không thể đánh dấu thông báo đã đọc.");
+    if (mode === "read-error") throw new Error("Could not mark the notification as read.");
     notifications = notifications.map(item => item._id === args.notificationId ? { ...item, isRead: true } : item);
     notify();
   });
@@ -185,6 +185,8 @@ export const SignInButton = ({ children, forceRedirectUrl }: { children: unknown
   return children;
 };
 export const SignUpButton = SignInButton, SignOutButton = SignInButton;
+export const SignIn = ({ routing }: { routing: string }) => createElement("div", { "data-testid": "clerk-sign-in", "data-routing": routing }, "Clerk sign-in callback");
+export const SignUp = ({ routing }: { routing: string }) => createElement("div", { "data-testid": "clerk-sign-up", "data-routing": routing }, "Clerk sign-up callback");
 function useAuthSnapshot() {
   useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener); }, () => revision);
 }

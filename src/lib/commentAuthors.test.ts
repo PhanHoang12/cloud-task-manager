@@ -17,7 +17,7 @@ describe("Comment author names", () => {
   });
   it("uses a stored account name when the custom name is a default placeholder", () => {
     const roster = [{ userId: author, fullName: "Hoàng tài khoản" }];
-    const self = buildCommentAuthorNames(roster, { id: author, profile: { fullName: "Người dùng", accountName: "Hoàng tài khoản" } });
+    const self = buildCommentAuthorNames(roster, { id: author, profile: { fullName: "User", accountName: "Hoàng tài khoản" } });
     const another = buildCommentAuthorNames(roster, { id: other, profile: null });
     expect(getCommentAuthorName(author, self)).toBe("Hoàng tài khoản");
     expect(getCommentAuthorName(author, another)).toBe("Hoàng tài khoản");
@@ -27,29 +27,29 @@ describe("Comment author names", () => {
     const otherRoster = [{ userId: author, fullName: null }];
     const self = buildCommentAuthorNames(selfRoster, { id: author, profile: null });
     const another = buildCommentAuthorNames(otherRoster, { id: other, profile: null });
-    expect(getCommentAuthorName(author, self)).toBe("Thành viên");
-    expect(getCommentAuthorName(author, another)).toBe("Thành viên");
+    expect(getCommentAuthorName(author, self)).toBe("Member");
+    expect(getCommentAuthorName(author, another)).toBe("Member");
   });
   it("keeps unnamed profiles neutral even if Clerk has a caller-only name", () => {
-    const self = buildCommentAuthorNames([{ userId: author, fullName: "Hoàng từ JWT" }], { id: author, profile: { fullName: "Người dùng" } });
-    expect(getCommentAuthorName(author, self)).toBe("Thành viên");
+    const self = buildCommentAuthorNames([{ userId: author, fullName: "Hoàng từ JWT" }], { id: author, profile: { fullName: "User" } });
+    expect(getCommentAuthorName(author, self)).toBe("Member");
   });
   it("waits for both permitted roster and viewer profile provenance before displaying names", () => {
-    expect(getCommentAuthorName(author, buildCommentAuthorNames(undefined, { id: author, profile }))).toBe("Đang tải tên thành viên…");
-    expect(getCommentAuthorName(author, buildCommentAuthorNames(members, undefined))).toBe("Đang tải tên thành viên…");
+    expect(getCommentAuthorName(author, buildCommentAuthorNames(undefined, { id: author, profile }))).toBe("Loading member name…");
+    expect(getCommentAuthorName(author, buildCommentAuthorNames(members, undefined))).toBe("Loading member name…");
   });
   it("handles blank names without returning identifiers or email", () => {
     const names = buildCommentAuthorNames([{ userId: author, fullName: "  " }], { id: other, profile: null });
-    expect(getCommentAuthorName(author, names)).toBe("Thành viên");
-    expect(getCommentAuthorName(null, names)).toBe("Thành viên");
-    expect(getCommentAuthorName(undefined, names)).toBe("Thành viên");
+    expect(getCommentAuthorName(author, names)).toBe("Member");
+    expect(getCommentAuthorName(null, names)).toBe("Member");
+    expect(getCommentAuthorName(undefined, names)).toBe("Member");
   });
   it("does not resurrect a removed member from the viewer's own profile", () => {
     const names = buildCommentAuthorNames([], { id: author, profile });
-    expect(getCommentAuthorName(author, names)).toBe("Thành viên");
+    expect(getCommentAuthorName(author, names)).toBe("Member");
   });
   it("keeps members outside the capped roster and unknown IDs neutral", () => {
-    expect(getCommentAuthorName("unknown_PRIVATE", forOther())).toBe("Thành viên");
+    expect(getCommentAuthorName("unknown_PRIVATE", forOther())).toBe("Member");
     expect(getCommentAuthorName(author, new Map())).not.toContain("Masn");
   });
   it("reflects name changes without changing IDs or mutating its inputs", () => {

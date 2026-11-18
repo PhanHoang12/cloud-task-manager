@@ -15,7 +15,7 @@ function Fixture() {
     <button className="ui-button ui-secondary" onClick={() => {
       for (let index = 0; index < 4; index++) {
         const error = kind === "error" || (kind === "mixed" && index % 2 === 1);
-        notify(error ? `Thông báo lỗi ${index + 1}: vui lòng thử lại.` : `Đã cập nhật công việc ${index + 1}. Nội dung được lưu thành công.`, error ? "error" : "success");
+        notify(error ? `Notifications lỗi ${index + 1}: vui lòng thử lại.` : `Đã cập nhật công việc ${index + 1}. Nội dung được lưu thành công.`, error ? "error" : "success");
       }
     }}>Hiển thị bốn thông báo</button>
     <div data-testid="task-placement" style={{ position: "fixed", left: 16, top: 140, width: 260 }}>

@@ -33,7 +33,7 @@ function Fixture() {
     window.completeModalSave = () => {
       setBusy(false);
       if (params.has("fail")) {
-        setError("Không thể lưu công việc. Vui lòng thử lại.");
+        setError("Could not save the task. Please try again.");
       } else {
         if (params.has("removeOpener")) setRemoveOpener(true);
         setSaved(count => count + 1);
@@ -54,14 +54,14 @@ function Fixture() {
     {open && <ModalDialog className={styles.overlay} label="Công việc thử nghiệm" busy={busy} onDismiss={() => setOpen(false)}>
       <form className={styles.form} onSubmit={submit}>
         <h2>Công việc thử nghiệm</h2>
-        <button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setOpen(false)}>Đóng</button>
+        <button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setOpen(false)}>Close</button>
         <label>Tiêu đề<input required minLength={kind === "personal" ? undefined : 3} maxLength={120} disabled={busy} value={title} onChange={event => setTitle(event.target.value)} /></label>
-        <label>Mô tả<textarea maxLength={2000} disabled={busy} /></label>
+        <label>Description<textarea maxLength={2000} disabled={busy} /></label>
         <button type="button" hidden>Ẩn</button>
         <button type="button" disabled>Không khả dụng</button>
         {error && <p role="alert">{error}</p>}
-        <button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setOpen(false)}>Hủy</button>
-        <button className="ui-button ui-primary" type="submit" disabled={busy}>Lưu</button>
+        <button className="ui-button ui-secondary" type="button" disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
+        <button className="ui-button ui-primary" type="submit" disabled={busy}>Save</button>
       </form>
     </ModalDialog>}
   </main>;

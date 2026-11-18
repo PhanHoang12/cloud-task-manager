@@ -20,7 +20,7 @@ function Toast({ notice, dismiss }: { notice: Notice; dismiss: (id: number) => v
   return <div className={`ui-toast ui-toast-${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>
     {notice.kind === "success" ? <CheckCircle2 size={20} aria-hidden="true" /> : <AlertCircle size={20} aria-hidden="true" />}
     <span>{notice.message}</span>
-    <button className="ui-button ui-secondary ui-icon" type="button" aria-label="Đóng thông báo" onClick={() => dismiss(notice.id)}><X size={16} /></button>
+    <button className="ui-button ui-secondary ui-icon" type="button" aria-label="Dismiss notification" onClick={() => dismiss(notice.id)}><X size={16} /></button>
   </div>;
 }
 
@@ -61,7 +61,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   return <FeedbackContext.Provider value={{ notify, confirm }}>
     {children}
     {createPortal(<>
-      <div className="ui-toast-region" aria-label="Thông báo thao tác">{notices.map(notice => <Toast key={notice.id} notice={notice} dismiss={dismiss} />)}</div>
+      <div className="ui-toast-region" aria-label="Action notifications">{notices.map(notice => <Toast key={notice.id} notice={notice} dismiss={dismiss} />)}</div>
       {confirmation && <dialog ref={dialog} className="ui-confirm" aria-labelledby="ui-confirm-title" aria-describedby="ui-confirm-description" onKeyDown={event => {
         if (event.key !== "Tab") return;
         const buttons = dialog.current?.querySelectorAll<HTMLButtonElement>("button");
@@ -74,8 +74,8 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         <h2 id="ui-confirm-title">{confirmation.title}</h2>
         <p id="ui-confirm-description">{confirmation.description}</p>
         <div className="ui-confirm-actions">
-          <button className="ui-button ui-secondary" type="button" autoFocus onClick={() => finish(false)}>Hủy</button>
-          <button className="ui-button ui-danger" type="button" onClick={() => finish(true)}>{confirmation.confirmLabel ?? "Xóa"}</button>
+          <button className="ui-button ui-secondary" type="button" autoFocus onClick={() => finish(false)}>Cancel</button>
+          <button className="ui-button ui-danger" type="button" onClick={() => finish(true)}>{confirmation.confirmLabel ?? "Delete"}</button>
         </div>
       </dialog>}
     </>, document.body)}

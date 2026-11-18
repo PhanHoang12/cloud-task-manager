@@ -53,7 +53,7 @@ export function notificationNavigationError(error: unknown): string {
   const message = [record.message, record.data, typeof error === "string" ? error : ""].filter(value => typeof value === "string").join(" ");
   if (["UNAUTHENTICATED", "UNAUTHORIZED", "AUTH_REQUIRED", "SESSION_EXPIRED"].includes(code) || status === 401 ||
     /cần đăng nhập|chưa đăng nhập|unauthenticated|not authenticated|authentication required/i.test(message)) {
-    return "Không thể xác minh phiên đăng nhập. Hãy kiểm tra tài khoản hoặc tải lại trang.";
+    return "Your session could not be verified. Check your account or reload the page.";
   }
-  return "Không thể mở nội dung liên quan. Nội dung có thể không còn khả dụng hoặc quyền truy cập đã thay đổi. Hãy thử lại hoặc chọn thông báo khác.";
+  return "This item may be unavailable or your access may have changed. Try again or choose another notification.";
 }

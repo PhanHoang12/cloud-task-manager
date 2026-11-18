@@ -26,7 +26,7 @@ describe("Notification destination data", () => {
     expect(getNotificationTarget(data)).toBeNull();
   });
   it("does not parse destinations out of messages", () => {
-    const data = { message: "Mở dự án project-b và task-b" };
+    const data = { message: "Open project project-b và task-b" };
     expect(getNotificationTarget(data as { projectId?: unknown })).toBeNull();
   });
 });
@@ -80,12 +80,12 @@ describe("Authorized notification navigation", () => {
 
 describe("Notification destination feedback", () => {
   it("gives distinct fixed authentication guidance", () => {
-    expect(notificationNavigationError(new Error("Bạn cần đăng nhập. PRIVATE"))).toContain("phiên đăng nhập");
-    expect(notificationNavigationError({ data: { code: "UNAUTHENTICATED" } })).toContain("phiên đăng nhập");
+    expect(notificationNavigationError(new Error("Bạn cần đăng nhập. PRIVATE"))).toContain("session");
+    expect(notificationNavigationError({ data: { code: "UNAUTHENTICATED" } })).toContain("session");
   });
   it("does not expose raw permission errors, IDs, paths, or stack details", () => {
     const message = notificationNavigationError(new Error("forbidden PRIVATE_USER backend/private.ts"));
-    expect(message).toContain("quyền truy cập");
+    expect(message).toContain("access");
     expect(message).not.toMatch(/PRIVATE|private.ts|forbidden/);
   });
 });

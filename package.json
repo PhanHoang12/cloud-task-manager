@@ -12,6 +12,7 @@
     "test:ui": "playwright test --config tests/ui/playwright.config.ts"
   },
   "dependencies": {
+    "@clerk/backend": "3.26.4",
     "@clerk/express": "^2.1.85",
     "@clerk/localizations": "^4.24.3",
     "@clerk/react": "^6.4.3",

@@ -7,7 +7,7 @@ export type CommentViewer = { id: string; profile: StoredName | null };
 function storedName(profile: StoredName | null) {
   // Select the source exactly as members.list does, then apply M1 normalization.
   const custom = profile?.fullName?.trim();
-  return normalizeMemberName((custom && custom !== "Người dùng" ? custom : "") || profile?.accountName);
+  return normalizeMemberName((custom && custom !== "User" ? custom : "") || profile?.accountName);
 }
 
 /**
@@ -31,7 +31,7 @@ export function buildCommentAuthorNames(
 
 /** IDs are lookup keys only. Unknown names never use ID fragments, email or roster positions. */
 export function getCommentAuthorName(authorId: string | null | undefined, names: ReadonlyMap<string, string> | undefined): string {
-  if (!authorId) return "Thành viên";
-  if (names === undefined) return "Đang tải tên thành viên…";
-  return names.get(authorId) || "Thành viên";
+  if (!authorId) return "Member";
+  if (names === undefined) return "Loading member name…";
+  return names.get(authorId) || "Member";
 }

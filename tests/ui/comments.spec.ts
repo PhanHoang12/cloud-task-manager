@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 const fixture = "/tests/ui/assignee-fixture.html?role=member";
 const panel = (page: Page) => page.locator(".kb-card").first().locator(".tc-panel");
 async function open(page: Page, viewer: string, identity = "") {
@@ -10,7 +10,7 @@ async function open(page: Page, viewer: string, identity = "") {
   }));
   await page.goto(fixture + "&viewer=" + viewer + "&identity=" + identity);
   await panel(page).locator(".tc-toggle").click();
-  await expect(panel(page).locator(".tc-bubble")).toHaveText("Hiển thị tên thành viên");
+  await expect(panel(page).locator(".tc-bubble")).toHaveText("Hiển thị tên members");
 }
 test("comment authors use the same current profile name and monogram in two independent viewer sessions", async ({ page, browser }, testInfo) => {
   const context = await browser.newContext({ viewport: page.viewportSize()! }), other = await context.newPage();
@@ -19,7 +19,7 @@ test("comment authors use the same current profile name and monogram in two inde
     for (const view of [page, other]) {
       await expect(panel(view).locator(".tc-author")).toHaveText("Nguyễn Hoàng");
       await expect(panel(view).locator(".tc-avatar")).toHaveText("N");
-      await expect(panel(view).locator(".tc-comment")).not.toContainText(/PRIVATE_|Masn|Thành viên Masn|\(Bạn\)/);
+      await expect(panel(view).locator(".tc-comment")).not.toContainText(/PRIVATE_|Masn|Member Masn|\(You\)/);
       expect(await view.evaluate(() => window.commentRegression.calls)).toEqual([]);
     }
     await expect(panel(page).locator(".tc-delete")).toHaveCount(1);
@@ -27,7 +27,7 @@ test("comment authors use the same current profile name and monogram in two inde
     await page.screenshot({ path: testInfo.outputPath("comment-profile-name.png") });
   } finally { await context.close(); }
 });
-for (const [identity, expected] of [["missing", "Thành viên"], ["blank", "Thành viên"], ["account", "Hoàng tài khoản"]]) {
+for (const [identity, expected] of [["missing", "Member"], ["blank", "Member"], ["account", "Hoàng tài khoản"]]) {
   test("comment profile state " + identity + " resolves consistently for self and another viewer", async ({ page, browser }) => {
     const context = await browser.newContext({ viewport: page.viewportSize()! }), other = await context.newPage();
     try {
@@ -36,7 +36,7 @@ for (const [identity, expected] of [["missing", "Thành viên"], ["blank", "Thà
       await expect(panel(other).locator(".tc-author")).toHaveText(expected);
       await expect(panel(page).locator(".tc-delete")).toHaveCount(1);
       await expect(panel(other).locator(".tc-delete")).toHaveCount(0);
-      if (expected === "Thành viên") {
+      if (expected === "Member") {
         await expect(panel(page).locator(".tc-avatar svg")).toHaveCount(1);
         await expect(panel(other).locator(".tc-avatar svg")).toHaveCount(1);
       }
@@ -47,7 +47,7 @@ test("comment author renames update both viewers without changing content, ident
   const context = await browser.newContext({ viewport: page.viewportSize()! }), other = await context.newPage();
   try {
     await open(page, "self"); await open(other, "other");
-    await panel(page).getByLabel("Viết bình luận").fill("Bản nháp chưa gửi");
+    await panel(page).getByLabel("Write a comment").fill("Bản nháp chưa gửi");
     const original = await page.evaluate(() => window.commentRegression.originalComment());
     for (const view of [page, other]) await view.evaluate(() => window.commentRegression.renameAuthor("Hoàng Đã Cập Nhật"));
     for (const view of [page, other]) {
@@ -56,8 +56,8 @@ test("comment author renames update both viewers without changing content, ident
       expect(await view.evaluate(() => window.commentRegression.originalComment())).toEqual(original);
       expect(await view.evaluate(() => window.commentRegression.calls)).toEqual([]);
     }
-    await expect(panel(page).getByLabel("Viết bình luận")).toHaveValue("Bản nháp chưa gửi");
-    await expect(panel(page).getByLabel("Viết bình luận")).toBeFocused();
+    await expect(panel(page).getByLabel("Write a comment")).toHaveValue("Bản nháp chưa gửi");
+    await expect(panel(page).getByLabel("Write a comment")).toBeFocused();
   } finally { await context.close(); }
 });
 test("removed members stay neutral for two permitted viewers without erasing their comments", async ({ page, browser }) => {
@@ -66,8 +66,8 @@ test("removed members stay neutral for two permitted viewers without erasing the
     await open(page, "other"); await open(other, "third");
     for (const view of [page, other]) {
       await view.evaluate(() => window.commentRegression.removeAuthor());
-      await expect(panel(view).locator(".tc-author")).toHaveText("Thành viên");
-      await expect(panel(view).locator(".tc-bubble")).toHaveText("Hiển thị tên thành viên");
+      await expect(panel(view).locator(".tc-author")).toHaveText("Member");
+      await expect(panel(view).locator(".tc-bubble")).toHaveText("Hiển thị tên members");
       await expect(panel(view).locator(".tc-comment")).not.toContainText(/PRIVATE_|Masn/);
       expect(await view.evaluate(() => window.commentRegression.originalComment().authorId)).toBe("user_author_PRIVATE_Masn");
       expect(await view.evaluate(() => window.commentRegression.calls)).toEqual([]);
@@ -80,14 +80,14 @@ test("a deleted author profile does not fall back to Clerk or ID fragments for e
     await open(page, "self"); await open(other, "other");
     for (const view of [page, other]) {
       await view.evaluate(() => window.commentRegression.removeProfile());
-      await expect(panel(view).locator(".tc-author")).toHaveText("Thành viên");
+      await expect(panel(view).locator(".tc-author")).toHaveText("Member");
       await expect(panel(view).locator(".tc-avatar svg")).toHaveCount(1);
     }
   } finally { await context.close(); }
 });
 test("pending author data is explicit and resolves without new per-comment identity queries", async ({ page }) => {
   await open(page, "self", "loading");
-  await expect(panel(page).locator(".tc-author")).toHaveText("Đang tải tên thành viên…");
+  await expect(panel(page).locator(".tc-author")).toHaveText("Loading member name…");
   await expect(panel(page).locator(".tc-comment")).not.toContainText(/PRIVATE_|Masn/);
   await page.evaluate(() => window.commentRegression.resolveDirectory());
   await expect(panel(page).locator(".tc-author")).toHaveText("Nguyễn Hoàng");
@@ -100,9 +100,9 @@ test("renamed self keeps original deletion arguments and comment submission stil
   await open(page, "self");
   await page.evaluate(() => window.commentRegression.renameAuthor("Tên mới"));
   await panel(page).locator(".tc-delete").click();
-  await page.getByRole("dialog").getByRole("button", { name: "Xóa", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete", exact: true }).click();
   expect(await page.evaluate(() => window.commentRegression.calls[0])).toEqual({ name: "comments:remove", args: { commentId: "comment-persisted" } });
-  await panel(page).getByLabel("Viết bình luận").fill("Bình luận mới");
-  await panel(page).getByRole("button", { name: "Gửi", exact: true }).click();
+  await panel(page).getByLabel("Write a comment").fill("Bình luận mới");
+  await panel(page).getByRole("button", { name: "Send", exact: true }).click();
   expect(await page.evaluate(() => window.commentRegression.calls[1])).toEqual({ name: "comments:create", args: { taskId: "task-comment", content: "Bình luận mới" } });
 });

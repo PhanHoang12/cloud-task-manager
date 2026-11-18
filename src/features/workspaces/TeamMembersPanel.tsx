@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Mail, UserMinus, Send, XCircle, UserRound, Crown, MoreHorizontal, UserPlus, ChevronDown } from "lucide-react";
+import { Mail, UserMinus, Send, XCircle, UserRound, Users, Crown, MoreHorizontal, UserPlus, ChevronDown } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAction, useFeedback } from "../../components/Feedback";
@@ -17,15 +17,15 @@ export function MyInvitations() {
   const decline = useMutation(api.invitations.decline);
   const { run, pending } = useAction();
   async function act(id: Id<"workspaceInvitations">, kind: "accept" | "decline") {
-    await run(() => kind === "accept" ? accept({ invitationId: id }) : decline({ invitationId: id }), kind === "accept" ? "Đã chấp nhận lời mời." : "Đã từ chối lời mời.", "Không thể xử lý lời mời.", `${id}:${kind}`);
+    await run(() => kind === "accept" ? accept({ invitationId: id }) : decline({ invitationId: id }), kind === "accept" ? "Invitation accepted." : "Invitation declined.", "Could not process the invitation.", `${id}:${kind}`);
   }
-  return <section className="tm-panel"><h2><Mail size={19} /> Lời mời của tôi</h2>
-    <p className="tm-muted">Lời mời được gửi đến địa chỉ thư điện tử đã xác minh của bạn.</p>
-    {invitations === undefined ? <p role="status">Đang tải lời mời...</p> : invitations.length === 0 ? <p className="tm-muted">Không có lời mời mới.</p> : invitations.map(inv => <div className="tm-line" key={inv._id}>
-      <span><strong>{inv.workspaceName}</strong><small>Vai trò: {roleLabels[inv.role]} · Hết hạn {new Date(inv.expiresAt).toLocaleDateString("vi-VN")}</small></span>
+  return <section className="tm-panel"><h2><Mail size={19} /> Your invitations</h2>
+    <p className="tm-muted">Invitations sent to your verified email address.</p>
+    {invitations === undefined ? <p role="status">Loading invitations...</p> : invitations.length === 0 ? <p className="tm-muted">No new invitations.</p> : invitations.map(inv => <div className="tm-line" key={inv._id}>
+      <span><strong>{inv.workspaceName}</strong><small>Role: {roleLabels[inv.role]} · Expired {new Date(inv.expiresAt).toLocaleDateString("en-US")}</small></span>
       <span className="tm-actions">
-        <button className="ui-button ui-primary" disabled={pending!==null} aria-busy={pending===`${inv._id}:accept`} onClick={() => void act(inv._id, "accept")}>{pending===`${inv._id}:accept` ? "Đang xử lý..." : "Chấp nhận"}</button>
-        <button className="ui-button ui-secondary" disabled={pending!==null} aria-busy={pending===`${inv._id}:decline`} onClick={() => void act(inv._id, "decline")}>{pending===`${inv._id}:decline` ? "Đang xử lý..." : "Từ chối"}</button>
+        <button className="ui-button ui-primary" disabled={pending!==null} aria-busy={pending===`${inv._id}:accept`} onClick={() => void act(inv._id, "accept")}>{pending===`${inv._id}:accept` ? "Working..." : "Accept"}</button>
+        <button className="ui-button ui-secondary" disabled={pending!==null} aria-busy={pending===`${inv._id}:decline`} onClick={() => void act(inv._id, "decline")}>{pending===`${inv._id}:decline` ? "Working..." : "Decline"}</button>
       </span>
     </div>)}
   </section>;
@@ -59,12 +59,12 @@ function MemberActions({ name, memberRole, allowAdmin, busy, onRoleChange, onRem
   return <div ref={root} className="tm-member-tools" onBlur={event => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
   }} onKeyDown={event => { if (event.key === "Escape") {event.preventDefault(); close();} }}>
-    <button ref={trigger} type="button" className="tm-more" aria-label={`Thao tác với ${name}`} aria-expanded={open} aria-controls={id} disabled={busy} onClick={() => setOpen(value => !value)}><MoreHorizontal size={21} /></button>
-    {open && <div id={id} className="tm-member-popover" role="group" aria-label={`Quản lý ${name}`}>
-      <label>Thay đổi vai trò<select aria-label={`Vai trò của ${name}`} value={memberRole} disabled={busy} onChange={event => {const value = event.target.value as Role; close(); onRoleChange(value);}}>
-        {allowAdmin && <option value="admin">Quản trị viên</option>}<option value="member">Thành viên</option><option value="viewer">Người xem</option>
+    <button ref={trigger} type="button" className="tm-more" aria-label={`Actions for ${name}`} aria-expanded={open} aria-controls={id} disabled={busy} onClick={() => setOpen(value => !value)}><MoreHorizontal size={21} /></button>
+    {open && <div id={id} className="tm-member-popover" role="group" aria-label={`Manage ${name}`}>
+      <label>Change role<select aria-label={`Role for ${name}`} value={memberRole} disabled={busy} onChange={event => {const value = event.target.value as Role; close(); onRoleChange(value);}}>
+        {allowAdmin && <option value="admin">Admin</option>}<option value="member">Member</option><option value="viewer">Viewer</option>
       </select></label>
-      <button className="ui-button ui-danger" type="button" disabled={busy} onClick={() => {close(); onRemove();}}><UserMinus size={16} /> Loại thành viên</button>
+      <button className="ui-button ui-danger" type="button" disabled={busy} onClick={() => {close(); onRemove();}}><UserMinus size={16} /> Remove member</button>
     </div>}
   </div>;
 }
@@ -88,63 +88,63 @@ export default function TeamMembersPanel({ workspaceId, myRole }: { workspaceId:
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (await run(() => invite({ workspaceId, email: email.trim(), role }), "Đã tạo lời mời. Người nhận đăng nhập để thấy lời mời.", "Không thể gửi lời mời.", "invite")) setEmail("");
+    if (await run(() => invite({ workspaceId, email: email.trim(), role }), "Invitation created. The recipient can sign in to view it.", "Could not send the invitation.", "invite")) setEmail("");
   }
   async function removeMember(userId: string, name: string) {
-    if (busy || !await confirm({ title: "Loại thành viên?", description: `${name} sẽ mất quyền truy cập không gian làm việc này.`, confirmLabel: "Loại thành viên" })) return;
-    await run(() => remove({ workspaceId, targetUserId: userId }), "Đã loại thành viên.", "Không thể loại thành viên.", `remove:${userId}`);
+    if (busy || !await confirm({ title: "Remove member?", description: `${name} will lose access to this workspace.`, confirmLabel: "Remove member" })) return;
+    await run(() => remove({ workspaceId, targetUserId: userId }), "Member removed.", "Could not remove the member.", `remove:${userId}`);
   }
   async function revokeInvitation(invitationId: Id<"workspaceInvitations">) {
-    if (busy || !await confirm({ title: "Thu hồi lời mời?", description: "Người nhận sẽ không thể dùng lời mời này để tham gia không gian làm việc.", confirmLabel: "Thu hồi" })) return;
-    await run(() => revoke({ invitationId }), "Đã thu hồi lời mời.", "Không thể thu hồi lời mời.", invitationId);
+    if (busy || !await confirm({ title: "Revoke invitation?", description: "The recipient will no longer be able to join with this invitation.", confirmLabel: "Revoke" })) return;
+    await run(() => revoke({ invitationId }), "Invitation revoked.", "Could not revoke the invitation.", invitationId);
   }
   async function leaveWorkspace() {
-    if (busy || !await confirm({ title: "Rời không gian?", description: "Bạn sẽ mất quyền truy cập các dự án trong không gian làm việc này. Cần lời mời mới để tham gia lại.", confirmLabel: "Rời không gian" })) return;
-    await run(() => leave({ workspaceId }), "Đã rời không gian làm việc.", "Không thể rời không gian làm việc.", "leave");
+    if (busy || !await confirm({ title: "Leave workspace?", description: "You will lose access to this workspace and its projects. You will need a new invitation to rejoin.", confirmLabel: "Leave workspace" })) return;
+    await run(() => leave({ workspaceId }), "You have left the workspace.", "Could not leave the workspace.", "leave");
   }
   const roleOrder = { owner: 0, admin: 1, member: 2, viewer: 3 };
   const orderedMembers = [...(members ?? [])].sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.joinedAt - b.joinedAt);
-  return <section className="tm-panel tm-member-panel" aria-label="Thành viên nhóm" aria-busy={busy || members === undefined}>
+  return <section className="tm-panel tm-member-panel" aria-label="People" aria-busy={busy || members === undefined}>
     <header className="tm-member-header">
-      <div><h2>Thành viên nhóm</h2><p>Quản lý tài khoản và vai trò trong nhóm</p></div>
-      <span className="tm-member-count">{members === undefined ? "Đang tải…" : `${members.length}${members.length === 100 ? "+" : ""} thành viên`}</span>
+      <div><h2><Users size={19}/>People</h2><p>The people who make things happen</p></div>
+      <span className="tm-member-count">{members === undefined ? "Loading…" : `${members.length}${members.length === 100 ? "+" : ""} ${members.length === 1 ? "member" : "members"}`}</span>
     </header>
-    {busy && <span className="ui-inline-busy" role="status">{pending?.startsWith("remove:") ? "Đang loại thành viên…" : "Đang xử lý…"}</span>}
-    {members === undefined ? <div className="tm-member-empty" role="status">Đang tải danh sách thành viên…</div> : members.length === 0 ? <div className="tm-member-empty">Chưa có thành viên trong không gian làm việc.</div> :
+    {busy && <span className="ui-inline-busy" role="status">{pending?.startsWith("remove:") ? "Removing member…" : "Working…"}</span>}
+    {members === undefined ? <div className="tm-member-empty" role="status">Loading members…</div> : members.length === 0 ? <div className="tm-member-empty">No one has joined this workspace yet.</div> :
       <ul className="tm-member-list">{orderedMembers.map(member => {
         const mine = member.userId === user?.id;
-        const displayName = member.fullName || (mine ? user?.fullName || user?.username : null) || `Thành viên ${member.userId.slice(-4)}`;
+        const displayName = member.fullName || (mine ? user?.fullName || user?.username : null) || `Member ${member.userId.slice(-4)}`;
         const memberEmail = member.email || (mine ? user?.primaryEmailAddress?.emailAddress : null);
         const avatarUrl = member.avatarUrl || (mine ? user?.imageUrl : null) || null;
         const canManage = isManager && member.role !== "owner" && (myRole === "owner" || member.role !== "admin");
         return <li className="tm-member-row" key={member._id} aria-busy={pending===`role:${member.userId}` || pending===`remove:${member.userId}`}>
           <MemberAvatar key={avatarUrl ?? "fallback"} url={avatarUrl} />
-          <div className="tm-member-identity"><strong>{displayName}{mine && <span className="tm-member-you">Bạn</span>}</strong><span className="tm-member-email">{memberEmail || "Chưa có địa chỉ thư điện tử"}</span></div>
+          <div className="tm-member-identity"><strong>{displayName}{mine && <span className="tm-member-you">You</span>}</strong><span className="tm-member-email">{memberEmail || "No email address"}</span></div>
           <div className="tm-member-right">
             <span className={`tm-role-badge tm-role-${member.role}`}>{member.role === "owner" && <Crown size={16} strokeWidth={1.6} />} {roleLabels[member.role]}</span>
             {canManage && <MemberActions name={displayName} memberRole={member.role as Role} allowAdmin={myRole === "owner"} busy={busy}
-              onRoleChange={value => {void run(() => changeRole({ workspaceId, targetUserId: member.userId, role: value }), "Đã cập nhật quyền.", "Không thể cập nhật quyền.", `role:${member.userId}`);}}
+              onRoleChange={value => {void run(() => changeRole({ workspaceId, targetUserId: member.userId, role: value }), "Permissions updated.", "Could not update permissions.", `role:${member.userId}`);}}
               onRemove={() => void removeMember(member.userId, displayName)} />}
           </div>
         </li>;
       })}</ul>}
     {isManager && <div className="tm-member-management">
       <details className="tm-invite-section">
-        <summary><UserPlus size={17} /> Mời thành viên <ChevronDown size={15} className="tm-details-chevron" /></summary>
+        <summary><UserPlus size={17} /> Invite a teammate <ChevronDown size={15} className="tm-details-chevron" /></summary>
         <form className="tm-invite" onSubmit={event => void submit(event)}>
-          <label>Thư điện tử người nhận<input type="email" required disabled={busy} value={email} onChange={event => setEmail(event.target.value)} placeholder="thanhvien@example.com" /></label>
-          <label>Vai trò<select disabled={busy} value={role} onChange={event => setRole(event.target.value as Role)}><option value="member">Thành viên</option><option value="viewer">Người xem</option>{myRole === "owner" && <option value="admin">Quản trị viên</option>}</select></label>
-          <button className="ui-button ui-primary" disabled={busy || !email.trim()} aria-busy={pending==="invite"} type="submit"><Send size={15} />{pending==="invite" ? "Đang gửi…" : "Gửi lời mời"}</button>
+          <label>Email address<input type="email" required disabled={busy} value={email} onChange={event => setEmail(event.target.value)} placeholder="thanhvien@example.com" /></label>
+          <label>Role<select disabled={busy} value={role} onChange={event => setRole(event.target.value as Role)}><option value="member">Member</option><option value="viewer">Viewer</option>{myRole === "owner" && <option value="admin">Admin</option>}</select></label>
+          <button className="ui-button ui-primary" disabled={busy || !email.trim()} aria-busy={pending==="invite"} type="submit"><Send size={15} />{pending==="invite" ? "Sending…" : "Send invitation"}</button>
         </form>
       </details>
       <details className="tm-pending-section">
-        <summary><Mail size={17} /> Lời mời đang chờ {invitations && <span className="tm-pending-count">{invitations.length}</span>}<ChevronDown size={15} className="tm-details-chevron" /></summary>
-        {invitations === undefined ? <p className="tm-muted">Đang tải lời mời…</p> : invitations.length === 0 ? <p className="tm-muted">Không có lời mời đang chờ.</p> : invitations.map(inv => <div className="tm-line" key={inv._id}>
-          <span><strong>{inv.email}</strong><small>{roleLabels[inv.role]} · {inv.expiresAt <= Date.now() ? "Đã hết hạn" : "Còn hiệu lực"}</small></span>
-          <button className="ui-button ui-danger" type="button" disabled={busy || (myRole === "admin" && inv.role === "admin")} aria-busy={pending===inv._id} onClick={() => void revokeInvitation(inv._id)}><XCircle size={16} />{pending===inv._id ? "Đang thu hồi…" : "Thu hồi"}</button>
+        <summary><Mail size={17} /> Pending invitations {invitations && <span className="tm-pending-count">{invitations.length}</span>}<ChevronDown size={15} className="tm-details-chevron" /></summary>
+        {invitations === undefined ? <p className="tm-muted">Loading invitations…</p> : invitations.length === 0 ? <p className="tm-muted">No pending invitations.</p> : invitations.map(inv => <div className="tm-line" key={inv._id}>
+          <span><strong>{inv.email}</strong><small>{roleLabels[inv.role]} · {inv.expiresAt <= Date.now() ? "Expired" : "Still active"}</small></span>
+          <button className="ui-button ui-danger" type="button" disabled={busy || (myRole === "admin" && inv.role === "admin")} aria-busy={pending===inv._id} onClick={() => void revokeInvitation(inv._id)}><XCircle size={16} />{pending===inv._id ? "Revoking…" : "Revoke"}</button>
         </div>)}
       </details>
     </div>}
-    {myRole !== "owner" && <div className="tm-member-footer"><button type="button" className="ui-button ui-danger" disabled={busy} aria-busy={pending==="leave"} onClick={() => void leaveWorkspace()}>{pending==="leave" ? "Đang xử lý…" : "Rời không gian"}</button></div>}
+    {myRole !== "owner" && <div className="tm-member-footer"><button type="button" className="ui-button ui-danger" disabled={busy} aria-busy={pending==="leave"} onClick={() => void leaveWorkspace()}>{pending==="leave" ? "Working…" : "Leave workspace"}</button></div>}
   </section>;
 }

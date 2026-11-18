@@ -10,7 +10,7 @@ const params = new URLSearchParams(location.search);
 const role = (params.get("role") ?? "owner") as "owner" | "admin" | "member" | "viewer";
 const project = {
   _id: "project-fixture", _creationTime: Date.now(), workspaceId: "workspace-fixture",
-  name: "Dự án kiểm tra người phụ trách", description: "Phân công bằng tên thành viên.",
+  name: "Dự án kiểm tra người phụ trách", description: "Phân công bằng tên members.",
   status: params.has("inactive") ? "archived" : "active",
 } as Doc<"projects">;
 createRoot(document.getElementById("root")!).render(<StrictMode><FeedbackProvider>

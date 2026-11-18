@@ -5,6 +5,8 @@ import "./profile.css";
 import { useAction, useFeedback } from "../../components/Feedback";
 import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAuth } from "@clerk/react";
+import { ContactRound, GraduationCap, Save, Text, Upload, UserRound } from "lucide-react";
+import PagePhoto from "../../components/PagePhoto";
 
 export default function ProfileSettings() {
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -46,7 +48,7 @@ export default function ProfileSettings() {
       fullName, bio: bio || undefined, phone: phone || undefined,
       studentId: studentId || undefined, department: department || undefined,
       className: className || undefined,
-    }), "Cập nhật hồ sơ thành công.", "Không thể cập nhật hồ sơ.", "save")) setBaseline(submitted);
+    }), "Profile updated.", "Could not update your profile.", "save")) setBaseline(submitted);
   }
 
   async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
@@ -55,16 +57,16 @@ export default function ProfileSettings() {
     if (!file || pending) return;
     await run(async () => {
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        throw new Error("Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.");
+        throw new Error("Choose a JPG, PNG, or WebP image.");
       }
       if (file.size === 0 || file.size > 2 * 1024 * 1024) {
-        throw new Error("Ảnh phải có dung lượng từ 1 byte đến 2 MB.");
+        throw new Error("The image must be between 1 byte and 2 MB.");
       }
       const token = await getToken();
-      if (!token) throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      if (!token) throw new Error("Your session expired. Please sign in again.");
       const convexUrl = import.meta.env.VITE_CONVEX_URL?.trim();
       if (!convexUrl || !/^https:\/\/[^/]+\.convex\.cloud\/?$/.test(convexUrl)) {
-        throw new Error("Không tìm thấy địa chỉ kết nối dữ liệu hợp lệ.");
+        throw new Error("A valid data connection could not be found.");
       }
       const siteUrl = convexUrl.replace(/\/$/, "").replace(/\.convex\.cloud$/, ".convex.site");
       const response = await fetch(`${siteUrl}/upload-avatar`, {
@@ -73,32 +75,29 @@ export default function ProfileSettings() {
         body: file,
       });
       if (!response.ok) {
-        throw new Error(await response.text() || `Tải ảnh thất bại: HTTP ${response.status}`);
+        throw new Error(await response.text() || `Photo upload failed: HTTP ${response.status}`);
       }
-    }, "Cập nhật ảnh đại diện thành công.", "Không thể tải ảnh đại diện.", "upload");
+    }, "Profile photo updated.", "Could not upload your profile photo.", "upload");
     input.value = "";
   }
 
   async function handleRemoveAvatar() {
-    if (pending || !await confirm({ title: "Xóa ảnh đại diện?", description: "Ảnh đại diện hiện tại sẽ bị xóa. Bạn có thể tải ảnh mới sau đó." })) return;
-    await run(() => removeAvatar(), "Đã xóa ảnh đại diện.", "Không thể xóa ảnh đại diện.", "remove");
+    if (pending || !await confirm({ title: "Remove profile photo?", description: "Your current photo will be removed. You can upload another one later." })) return;
+    await run(() => removeAvatar(), "Profile photo removed.", "Could not remove your profile photo.", "remove");
   }
 
   if (!data) {
-    return <div className="profile-page"><div className="profile-card" role="status">Đang tải hồ sơ...</div></div>;
+    return <div className="profile-page"><div className="profile-card" role="status">Loading your profile...</div></div>;
   }
 
   const avatarUrl = data.profile?.avatarUrl;
 
   return (
     <div className="profile-page">
-      <div className="profile-header">
+      <div className="profile-header photo-heading"><PagePhoto scene="desk"/>
         <div>
-          <p className="profile-overline">CÀI ĐẶT TÀI KHOẢN</p>
-          <h1>Hồ sơ cá nhân</h1>
-          <p className="profile-muted">
-            Cập nhật ảnh đại diện và thông tin để các thành viên dễ nhận ra bạn.
-          </p>
+          <p className="profile-overline">ACCOUNT SETTINGS</p>
+          <h1>Profile</h1>
         </div>
       </div>
 
@@ -106,7 +105,7 @@ export default function ProfileSettings() {
         <section className="profile-card profile-side">
           <div className="profile-avatar-wrap">
             {avatarUrl ? (
-              <img className="profile-avatar" src={avatarUrl} alt="Ảnh đại diện" />
+              <img className="profile-avatar" src={avatarUrl} alt="Profile photo" />
             ) : (
               <div className="profile-avatar profile-avatar-fallback">
                 {fullName?.slice(0, 1).toUpperCase() || "U"}
@@ -114,16 +113,17 @@ export default function ProfileSettings() {
             )}
           </div>
 
-          <h2>{fullName || "Người dùng"}</h2>
-          <p className="profile-email">{data.clerk.email || "Chưa có địa chỉ thư điện tử"}</p>
+          <h2>{fullName || "User"}</h2>
+          <p className="profile-email">{data.clerk.email || "No email address"}</p>
 
           <div className="profile-actions">
             <button type="button" className="ui-button ui-primary" disabled={pending!==null} aria-busy={pending==="upload"} onClick={() => avatarInput.current?.click()}>
-              {pending==="upload" ? "Đang tải ảnh..." : "Tải ảnh đại diện"}
+              <Upload size={16}/>
+              {pending==="upload" ? "Uploading..." : "Upload photo"}
             </button>
             <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp" disabled={pending!==null} hidden onChange={handleAvatarChange} />
             <button type="button" className="ui-button ui-danger" disabled={pending!==null || !avatarUrl} aria-busy={pending==="remove"} onClick={() => void handleRemoveAvatar()}>
-              {pending==="remove" ? "Đang xóa..." : "Xóa ảnh đại diện"}
+              {pending==="remove" ? "Deleting..." : "Remove photo"}
             </button>
           </div>
         </section>
@@ -132,52 +132,57 @@ export default function ProfileSettings() {
           <form className="profile-form ui-form" onSubmit={(e) => void handleSubmit(e)}>
             <fieldset className="profile-fields" disabled={pending!==null}>
             <div className="profile-section-title">
-              <h2>Thông tin cá nhân</h2>
-              <p>Thông tin giúp các thành viên nhận diện và liên hệ với bạn.</p>
+              <h2><UserRound size={20}/>Personal details</h2>
+              <p>Help your teammates put a face to the name.</p>
             </div>
 
+            <div className="profile-field-group"><h3><ContactRound size={17}/>Identity & contact</h3>
             <div className="profile-form-grid">
               <label>
-                Họ và tên
+                Full name
                 <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80} />
               </label>
 
               <label>
-                Số điện thoại
+                Phone number
                 <input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
               </label>
 
+            </div></div>
+            <div className="profile-field-group"><h3><GraduationCap size={17}/>Academic details</h3>
+            <div className="profile-form-grid">
               <label>
-                Mã sinh viên
+                Student ID
                 <input value={studentId} onChange={(e) => setStudentId(e.target.value)} maxLength={30} />
               </label>
 
               <label>
-                Khoa / Bộ môn
+                Department
                 <input value={department} onChange={(e) => setDepartment(e.target.value)} maxLength={100} />
               </label>
 
               <label>
-                Lớp
+                Class
                 <input value={className} onChange={(e) => setClassName(e.target.value)} maxLength={50} />
               </label>
-            </div>
+            </div></div>
 
-            <label>
-              Tiểu sử
+            <div className="profile-field-group"><h3><Text size={17}/>A little about you</h3><label>
+              About you
               <textarea
                 rows={5}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 maxLength={500}
-                placeholder="Ví dụ: Sinh viên công nghệ thông tin, quan tâm đến điện toán đám mây và phát triển ứng dụng..."
+                placeholder="Tell your teammates a little about yourself, your interests, or what you are working on..."
               />
-            </label>
+            </label></div>
 
 
             <div className="profile-submit">
               <button className="ui-button ui-primary" aria-busy={pending==="save"} type="submit" disabled={pending!==null}>
-                {pending==="save" ? "Đang lưu..." : "Lưu thay đổi"}
+                <Save size={16}/>
+                {pending==="save" ? "Saving..." : "Save changes"}
               </button>
             </div>
             </fieldset>

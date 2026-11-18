@@ -1,7 +1,8 @@
 
 import { useQuery } from "convex/react";
 import { createPortal } from "react-dom";
-import { ChevronDown } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, ChevronDown, Clock3, ListTodo } from "lucide-react";
+import type { ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import "./automation-dashboard.css";
@@ -21,7 +22,7 @@ function StatCard({
   variant = "blue",
   subtitle,
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
   value: number;
   variant?: "blue" | "red" | "amber" | "green";
@@ -36,7 +37,7 @@ function StatCard({
       <div className="ad-stat-content">
         <span className="ad-stat-label">{label}</span>
         <strong className="ad-stat-value">
-          {value.toLocaleString("vi-VN")}
+          {value.toLocaleString("en-US")}
         </strong>
         <span className="ad-stat-subtitle">
           {subtitle}
@@ -60,7 +61,7 @@ export default function AutomationDashboard({
     return (
       <section className="ad-dashboard ad-loading" aria-busy="true">
         <div className="ad-spinner" />
-        <span role="status">Đang tải tổng quan tiến độ...</span>
+        <span role="status">Loading project progress...</span>
       </section>
     );
   }
@@ -89,7 +90,7 @@ export default function AutomationDashboard({
 
   const formattedTime = new Date(
     data.generatedAt
-  ).toLocaleString("vi-VN", {
+  ).toLocaleString("en-US", {
     timeZone: "Asia/Ho_Chi_Minh",
     hour: "2-digit",
     minute: "2-digit",
@@ -106,95 +107,93 @@ export default function AutomationDashboard({
     {noticeTarget && (data.tasks.overdue > 0 || data.tasks.upcoming > 0 || isIncomplete) && createPortal(
       <div className="ad-deadline-notice" role="status">
         <div>
-          {data.tasks.overdue > 0 && <strong>Đã quá hạn: {data.tasks.overdue} công việc. </strong>}
-          {data.tasks.upcoming > 0 && <span>Sắp hết hạn: {data.tasks.upcoming} công việc trong vòng 24 giờ. </span>}
-          {isIncomplete && <span>Một phần dữ liệu vượt giới hạn thống kê. Số liệu có thể chưa đầy đủ.</span>}
+          {data.tasks.overdue > 0 && <strong>Overdue: {data.tasks.overdue} tasks. </strong>}
+          {data.tasks.upcoming > 0 && <span>Due soon: {data.tasks.upcoming} tasks within the next 24 hours. </span>}
+          {isIncomplete && <span>Some data exceeds the reporting limit. These totals may be incomplete.</span>}
         </div>
-        {onReviewTasks && <button type="button" className="ui-button ui-secondary" onClick={onReviewTasks}>Xem bảng công việc</button>}
+        {onReviewTasks && <button type="button" className="ui-button ui-secondary" onClick={onReviewTasks}>View task board</button>}
       </div>, noticeTarget)}
     <section
       className="ad-dashboard"
-      aria-label="Tiến độ và nhắc hạn"
+      aria-label="Progress & deadlines"
     >
       <details className="ad-overview">
-        <summary><span>Tiến độ và nhắc hạn</span><ChevronDown size={20} aria-hidden="true" /></summary>
+        <summary><span>Progress & deadlines</span><ChevronDown size={20} aria-hidden="true" /></summary>
       {/* Header */}
       <div className="ad-header">
         <div>
           <span className="ad-eyebrow">
-            THEO DÕI TỰ ĐỘNG
+            AUTOMATED INSIGHTS
           </span>
 
-          <h3>Tiến độ và nhắc hạn</h3>
+          <h3>Progress & deadlines</h3>
 
           <p>
-            Theo dõi hạn hoàn thành, tiến độ và cảnh báo
-            của dự án {data.project.name}.
+            Keep an eye on project progress, deadlines, and alerts {data.project.name}.
           </p>
         </div>
 
         <div className="ad-live">
           <span className="ad-live-dot" />
-          Cập nhật tự động
+          Live updates
         </div>
       </div>
 
       {/* Data completeness warning */}
       {isIncomplete && (
         <div className="ad-warning" role="status">
-          ⚠️ Một phần dữ liệu vượt giới hạn thống kê.
-          Các số liệu bên dưới chưa phải tổng đầy đủ.
+          Some data exceeds the reporting limit. The totals below may be incomplete.
         </div>
       )}
 
       {/* KPI cards */}
       <div className="ad-stats-grid">
         <StatCard
-          icon="📋"
-          label="Tổng công việc"
+          icon={<ListTodo size={21}/>}
+          label="Total tasks"
           value={total}
-          subtitle="Công việc trong dự án"
+          subtitle="Project tasks"
           variant="blue"
         />
 
         <StatCard
-          icon="🚨"
-          label="Đã quá hạn"
+          icon={<AlertTriangle size={21}/>}
+          label="Overdue"
           value={data.tasks.overdue}
-          subtitle="Công việc chưa hoàn thành"
+          subtitle="Incomplete tasks"
           variant="red"
         />
 
         <StatCard
-          icon="⏰"
-          label="Sắp hết hạn"
+          icon={<Clock3 size={21}/>}
+          label="Due soon"
           value={data.tasks.upcoming}
-          subtitle="Trong vòng 24 giờ"
+          subtitle="Within the next 24 hours"
           variant="amber"
         />
 
         <StatCard
-          icon="✅"
-          label="Đã hoàn thành"
+          icon={<CheckCircle2 size={21}/>}
+          label="Completed"
           value={completed}
-          subtitle={`${completionRate}% tổng công việc`}
+          subtitle={`${completionRate}% of all tasks`}
           variant="green"
         />
       </div>
 
       <details className="ad-more">
-        <summary>Chi tiết tiến độ và thông báo</summary>
+        <summary>Progress & notification details</summary>
         <div className="ad-details-grid">
           <div className="ad-panel">
             <div className="ad-panel-heading">
-              <h4>Tiến độ công việc</h4>
+              <h4>Task progress</h4>
               <span>{completionRate}%</span>
             </div>
 
             <div
               className="ad-progress"
               role="progressbar"
-              aria-label="Tỷ lệ hoàn thành công việc"
+              aria-label="Task completion rate"
               aria-valuenow={completionRate}
               aria-valuemin={0}
               aria-valuemax={100}
@@ -209,17 +208,17 @@ export default function AutomationDashboard({
 
             <div className="ad-detail-rows">
               <div>
-                <span>Đã hoàn thành</span>
+                <span>Completed</span>
                 <strong>{completed}</strong>
               </div>
 
               <div>
-                <span>Chưa đến hạn</span>
+                <span>On track</span>
                 <strong>{data.tasks.normal}</strong>
               </div>
 
               <div>
-                <span>Chưa có hạn hoàn thành</span>
+                <span>No deadline</span>
                 <strong>
                   {data.tasks.withoutDeadline}
                 </strong>
@@ -229,37 +228,37 @@ export default function AutomationDashboard({
 
           <div className="ad-panel">
             <div className="ad-panel-heading">
-              <h4>Thống kê thông báo</h4>
-              <span>🔔</span>
+              <h4>Notification activity</h4>
+              <Bell size={18} aria-hidden="true"/>
             </div>
 
             <div className="ad-detail-rows">
               <div>
-                <span>Cảnh báo đã gửi</span>
+                <span>Alerts sent</span>
                 <strong>{sent}</strong>
               </div>
 
               <div>
-                <span>Còn hiệu lực</span>
+                <span>Still active</span>
                 <strong className="ad-number-blue">
                   {activeAlerts}
                 </strong>
               </div>
 
               <div>
-                <span>Thông báo sắp hạn</span>
+                <span>Upcoming deadline alerts</span>
                 <strong>{data.alerts.upcoming}</strong>
               </div>
 
               <div>
-                <span>Thông báo quá hạn</span>
+                <span>Overdue alerts</span>
                 <strong>{data.alerts.overdue}</strong>
               </div>
             </div>
 
             <div className="ad-alert-progress">
               <div className="ad-alert-label">
-                <span>Tỷ lệ cảnh báo còn hiệu lực</span>
+                <span>Active alert rate</span>
                 <strong>{activeAlertRate}%</strong>
               </div>
 
@@ -279,14 +278,14 @@ export default function AutomationDashboard({
         <div className="ad-footer">
           <span>
             <span className="ad-live-dot" />
-            Dữ liệu được đồng bộ tự động
+            Data syncs automatically
           </span>
 
           <span>
-            Cập nhật: {formattedTime}
+            Updated: {formattedTime}
           </span>
         </div>
-        <ScreenErrorBoundary scope="Lịch sử nhắc hạn" resetKey={projectId}><AutomationHistory /></ScreenErrorBoundary>
+        <ScreenErrorBoundary scope="Deadline history" resetKey={projectId}><AutomationHistory /></ScreenErrorBoundary>
       </details>
       </details>
     </section>

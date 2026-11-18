@@ -37,8 +37,8 @@ describe("Kanban assignee presentation", () => {
       { userId: "user_SECRET_D", fullName: "An" },
     ]);
     expect(new Set(labels.values()).size).toBe(4);
-    expect(labels.get("user_SECRET_A")).toBe("An · shared@example.invalid · Thành viên 1");
-    expect(labels.get("user_SECRET_D")).toBe("An · Thành viên 4");
+    expect(labels.get("user_SECRET_A")).toBe("An · shared@example.invalid · Member 1");
+    expect(labels.get("user_SECRET_D")).toBe("An · Member 4");
     expect([...labels.values()].join(" ")).not.toContain("SECRET");
   });
 
@@ -47,39 +47,39 @@ describe("Kanban assignee presentation", () => {
       { userId: "a", fullName: " ", email: " member@example.invalid " },
       { userId: "b", fullName: null, email: null },
     ]);
-    expect(labels.get("a")).toBe("Thành viên chưa có tên · member@example.invalid");
-    expect(labels.get("b")).toBe("Thành viên chưa có tên");
+    expect(labels.get("a")).toBe("Unnamed member · member@example.invalid");
+    expect(labels.get("b")).toBe("Unnamed member");
   });
 
   it("distinguishes several unnamed members without inventing actual names", () => {
     const labels = buildAssigneeLabels([{ userId: "a" }, { userId: "b" }]);
-    expect(labels.get("a")).toBe("Thành viên chưa có tên · Thành viên 1");
-    expect(labels.get("b")).toBe("Thành viên chưa có tên · Thành viên 2");
+    expect(labels.get("a")).toBe("Unnamed member · Member 1");
+    expect(labels.get("b")).toBe("Unnamed member · Member 2");
   });
 
-  it("prefers the workspace name for the current user and marks them as Bạn", () => {
+  it("prefers the workspace name for the current user and marks them as You", () => {
     const labels = buildAssigneeLabels([{ userId: "me", fullName: "Tên trong nhóm", email: "me@example.invalid" }], { id: "me", fullName: "Tên Clerk" });
-    expect(labels.get("me")).toBe("Tên trong nhóm (Bạn)");
+    expect(labels.get("me")).toBe("Tên trong nhóm (You)");
   });
 
-  it("falls back to the current Clerk name, then Bạn", () => {
-    expect(buildAssigneeLabels([{ userId: "me" }], { id: "me", fullName: "Lê Minh" }).get("me")).toBe("Lê Minh (Bạn)");
-    expect(buildAssigneeLabels([{ userId: "me" }], { id: "me" }).get("me")).toBe("Bạn");
+  it("falls back to the current Clerk name, then You", () => {
+    expect(buildAssigneeLabels([{ userId: "me" }], { id: "me", fullName: "Lê Minh" }).get("me")).toBe("Lê Minh (You)");
+    expect(buildAssigneeLabels([{ userId: "me" }], { id: "me" }).get("me")).toBe("You");
   });
 
   it.each([undefined, null, ""])("handles an unassigned task (%s)", userId => {
-    expect(getAssigneeLabel(userId, new Map(), false)).toBe("Chưa phân công");
+    expect(getAssigneeLabel(userId, new Map(), false)).toBe("Unassigned");
   });
 
   it("distinguishes loading from a member absent in the returned directory", () => {
-    expect(getAssigneeLabel("private_ID", new Map(), false)).toBe("Đang tải người phụ trách…");
-    expect(getAssigneeLabel("private_ID", new Map(), true)).toBe("Thành viên không có trong danh sách");
+    expect(getAssigneeLabel("private_ID", new Map(), false)).toBe("Loading assignee…");
+    expect(getAssigneeLabel("private_ID", new Map(), true)).toBe("Member unavailable");
   });
 
   it("uses the known current-user name even while the directory loads or omits them", () => {
     const viewer = { id: "me", fullName: "Lê Minh" };
-    expect(getAssigneeLabel("me", new Map(), false, viewer)).toBe("Lê Minh (Bạn)");
-    expect(getAssigneeLabel("me", new Map(), true, viewer)).toBe("Lê Minh (Bạn)");
+    expect(getAssigneeLabel("me", new Map(), false, viewer)).toBe("Lê Minh (You)");
+    expect(getAssigneeLabel("me", new Map(), true, viewer)).toBe("Lê Minh (You)");
   });
 
   it("does not read or display private profile fields", () => {
@@ -89,7 +89,7 @@ describe("Kanban assignee presentation", () => {
 
   it("refreshes labels from new snapshots without mutating member data", () => {
     const member = Object.freeze({ userId: "a", fullName: null });
-    expect(buildAssigneeLabels([member]).get("a")).toBe("Thành viên chưa có tên");
+    expect(buildAssigneeLabels([member]).get("a")).toBe("Unnamed member");
     expect(buildAssigneeLabels([{ ...member, fullName: "Tên vừa cập nhật" }]).get("a")).toBe("Tên vừa cập nhật");
     expect(member.fullName).toBeNull();
   });

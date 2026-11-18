@@ -1,5 +1,5 @@
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 import fs from "node:fs";
 const fixture = "/tests/ui/popup-fixture.html";
 async function board(page: Page) {
@@ -10,7 +10,7 @@ async function board(page: Page) {
 }
 async function navigate(page: Page, name: string) {
   const button = page.getByRole("navigation").getByRole("button", { name, exact: true });
-  if (!await button.isVisible()) await page.getByRole("button", { name: "Mở điều hướng", exact: true }).click();
+  if (!await button.isVisible()) await page.getByRole("button", { name: "Open navigation", exact: true }).click();
   await button.click();
 }
 test.beforeEach(async ({ page }) => {
@@ -53,19 +53,19 @@ test("M9 lanes lead analytics; compact subtasks and both disclosures support key
   await summary.focus(); await page.keyboard.press("Enter");
   await expect(page.locator(".ad-stats-grid")).toBeVisible();
   await page.locator(".ad-more > summary").click();
-  await expect(page.getByRole("progressbar", { name: "Tỷ lệ hoàn thành công việc" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Task completion rate" })).toBeVisible();
   await summary.focus(); await page.keyboard.press("Space");
   await expect(page.locator(".ad-stats-grid")).not.toBeVisible();
   await expect(summary).toBeFocused();
   const subtasks = page.locator(".st-disclosure > summary");
-  await expect(page.getByLabel("Tên công việc con")).not.toBeVisible();
+  await expect(page.getByLabel("Subtask name")).not.toBeVisible();
   await subtasks.focus(); await page.keyboard.press("Enter");
-  await expect(page.getByLabel("Tên công việc con")).toBeVisible();
-  await page.getByLabel("Tên công việc con").fill("Bản nháp công việc con");
+  await expect(page.getByLabel("Subtask name")).toBeVisible();
+  await page.getByLabel("Subtask name").fill("Bản nháp công việc con");
   await subtasks.focus(); await page.keyboard.press("Space");
-  await expect(page.getByLabel("Tên công việc con")).not.toBeVisible();
+  await expect(page.getByLabel("Subtask name")).not.toBeVisible();
   await page.keyboard.press("Enter");
-  await expect(page.getByLabel("Tên công việc con")).toHaveValue("Bản nháp công việc con");
+  await expect(page.getByLabel("Subtask name")).toHaveValue("Bản nháp công việc con");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.locator(".kb-card").scrollIntoViewIfNeeded();
   await page.screenshot({ path: dir + "/after-subtasks-" + name + ".png", fullPage: true });
@@ -74,15 +74,15 @@ test("M9 urgent warnings remain visible, respect incomplete data and return keyb
   await board(page);
   await page.evaluate(() => (window as unknown as { kanbanLayout: { deadlines: (value?: boolean) => void } }).kanbanLayout.deadlines(true));
   const notice = page.locator(".ad-deadline-notice");
-  await expect(notice).toContainText("Đã quá hạn: 1");
-  await expect(notice).toContainText("Sắp hết hạn: 1");
-  await expect(notice).toContainText("chưa đầy đủ");
+  await expect(notice).toContainText("Overdue: 1");
+  await expect(notice).toContainText("Due soon: 1");
+  await expect(notice).toContainText("incomplete");
   await expect(page.locator(".ad-stats-grid")).not.toBeVisible();
   await page.screenshot({ path: "node_modules/.cache/kanban-layout/after-warning-" + testInfo.project.name + ".png", fullPage: true });
   expect(await notice.evaluate(element => !!(element.compareDocumentPosition(document.querySelector(".kb-columns")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
-  await page.getByLabel("Tìm công việc", { exact: true }).fill("không có kết quả");
-  await notice.getByRole("button", { name: "Xem bảng công việc" }).focus(); await page.keyboard.press("Enter");
-  await expect(page.getByLabel("Tìm công việc", { exact: true })).toHaveValue("");
+  await page.getByLabel("Search tasks", { exact: true }).fill("không có kết quả");
+  await notice.getByRole("button", { name: "View task board" }).focus(); await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Search tasks", { exact: true })).toHaveValue("");
   await expect(page.locator(".kb-columns")).toBeFocused();
   await expect(page.locator(".kb-card")).toHaveCount(1);
   await expect.poll(() => page.evaluate(() => window.experienceRegression.activeQueries["automationStats:projectOverview"])).toBe(1);
@@ -91,14 +91,14 @@ test("M9 hidden subtask drafts still guard navigation and rename drafts survive 
   await board(page);
   const summary = page.locator(".st-disclosure > summary");
   await summary.click();
-  await page.locator(".st-tools").getByRole("button", { name: "Sửa", exact: true }).click();
-  await page.getByLabel("Sửa tên công việc con").fill("Tên mới chưa lưu");
+  await page.locator(".st-tools").getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByLabel("Rename subtask").fill("Tên mới chưa lưu");
   await summary.click();
   page.once("dialog", dialog => dialog.dismiss());
   await page.locator(".kb-back").click();
   await expect(page.locator(".kb-page")).toBeVisible();
-  await summary.click(); await expect(page.getByLabel("Sửa tên công việc con")).toHaveValue("Tên mới chưa lưu");
-  await page.locator(".st-edit-form").getByRole("button", { name: "Lưu", exact: true }).click();
+  await summary.click(); await expect(page.getByLabel("Rename subtask")).toHaveValue("Tên mới chưa lưu");
+  await page.locator(".st-edit-form").getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByRole("checkbox", { name: "Tên mới chưa lưu", exact: true })).toBeVisible();
   await expect(page.locator(".st-edit-form")).toHaveCount(0);
   await page.locator(".kb-back").click(); await expect(page.locator(".ws-projects")).toBeVisible();
@@ -106,7 +106,9 @@ test("M9 hidden subtask drafts still guard navigation and rename drafts survive 
 test("M9 drag-and-drop and explicit status controls retain original mutation identities", async ({ page }, testInfo) => {
   await board(page);
   const card = page.locator(".kb-card"), target = page.locator(".kb-todo");
-  if (testInfo.project.name === "desktop") await card.dragTo(target);
+  // Start from the non-interactive title. The compact card's center is a native
+  // status select, which must retain its own pointer interaction.
+  if (testInfo.project.name === "desktop") await card.getByRole("heading").dragTo(target);
   else {
     // Native HTML events verify handlers on narrow viewports; physical touch is separate.
     const transfer = await page.evaluateHandle(() => new DataTransfer());
@@ -123,16 +125,16 @@ test("M9 drag-and-drop and explicit status controls retain original mutation ide
 });
 test("M9 preserves M3 task target focus and isolates failed analytics from healthy lanes", async ({ page }) => {
   await page.goto(fixture);
-  const bell = page.getByRole("button", { name: /^Thông báo,/ });
+  const bell = page.getByRole("button", { name: /^Notifications,/ });
   await bell.click();
   await page.locator(".notify-item").filter({ hasText: "Bình luận liên quan" }).click();
   await expect(page.locator(".kb-card[data-notification-target]")).toBeFocused();
   await page.evaluate(() => window.experienceRegression.failQuery("automationStats:projectOverview", true));
-  await expect(page.locator(".kb-page").getByRole("alert").filter({ hasText: "Tiến độ và nhắc hạn" })).toBeVisible();
+  await expect(page.locator(".kb-page").getByRole("alert").filter({ hasText: "Progress & deadlines" })).toBeVisible();
   await expect(page.locator(".kb-card")).toHaveCount(1);
   await page.evaluate(() => window.experienceRegression.failQuery("automationStats:projectOverview", false));
-  await page.locator(".kb-page").getByRole("button", { name: "Thử lại", exact: true }).click();
+  await page.locator(".kb-page").getByRole("button", { name: "Try again", exact: true }).click();
   await expect(page.locator(".ad-overview > summary")).toBeVisible();
-  await navigate(page, "Công việc cá nhân"); await navigate(page, "Không gian và dự án");
+  await navigate(page, "My tasks"); await navigate(page, "Workspaces & projects");
   await expect(page.locator(".kb-page")).toBeVisible();
 });

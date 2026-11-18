@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 
 for (const kind of ["personal", "workspace", "kanban"]) {
   test.describe(kind, () => {
@@ -11,11 +11,11 @@ for (const kind of ["personal", "workspace", "kanban"]) {
     test("focuses the first field and wraps Tab/Shift+Tab past hidden and disabled controls", async ({ page }, testInfo) => {
       const modal = page.getByRole("dialog", { name: "Công việc thử nghiệm" });
       await expect(page.getByLabel("Tiêu đề")).toBeFocused();
-      await page.getByRole("button", { name: "Đóng", exact: true }).focus();
+      await page.getByRole("button", { name: "Close", exact: true }).focus();
       await page.keyboard.press("Shift+Tab");
-      await expect(page.getByRole("button", { name: "Lưu", exact: true })).toBeFocused();
+      await expect(page.getByRole("button", { name: "Save", exact: true })).toBeFocused();
       await page.keyboard.press("Tab");
-      await expect(page.getByRole("button", { name: "Đóng", exact: true })).toBeFocused();
+      await expect(page.getByRole("button", { name: "Close", exact: true })).toBeFocused();
       for (const key of ["Tab", "Shift+Tab"]) {
         for (let index = 0; index < 9; index++) {
           await page.keyboard.press(key);
@@ -30,8 +30,8 @@ for (const kind of ["personal", "workspace", "kanban"]) {
       const opener = page.getByRole("button", { name: "Mở hộp thoại", exact: true });
       for (const action of ["escape", "close", "cancel", "backdrop"]) {
         if (action === "escape") await page.keyboard.press("Escape");
-        if (action === "close") await page.getByRole("button", { name: "Đóng", exact: true }).click();
-        if (action === "cancel") await page.getByRole("button", { name: "Hủy", exact: true }).click();
+        if (action === "close") await page.getByRole("button", { name: "Close", exact: true }).click();
+        if (action === "cancel") await page.getByRole("button", { name: "Cancel", exact: true }).click();
         if (action === "backdrop") await page.mouse.click(5, 5);
         await expect(page.getByRole("dialog")).toHaveCount(0);
         await expect(opener, `Focus restored after ${action}`).toBeFocused();
@@ -54,11 +54,11 @@ for (const kind of ["personal", "workspace", "kanban"]) {
     });
 
     test("preserves validation and traps focus while saving, then restores it on success", async ({ page }) => {
-      await page.getByRole("button", { name: "Lưu", exact: true }).click();
+      await page.getByRole("button", { name: "Save", exact: true }).click();
       await expect(page.getByLabel("Tiêu đề")).toBeFocused();
       await expect(page.getByLabel("Đã lưu")).toHaveText("0");
-      await page.getByLabel("Tiêu đề").fill("Công việc mới");
-      await page.getByRole("button", { name: "Lưu", exact: true }).click();
+      await page.getByLabel("Tiêu đề").fill("New task");
+      await page.getByRole("button", { name: "Save", exact: true }).click();
       const modal = page.getByRole("dialog");
       await expect(page.getByLabel("Tiêu đề")).toBeDisabled();
       await page.keyboard.press("Tab");
@@ -77,9 +77,9 @@ for (const kind of ["personal", "workspace", "kanban"]) {
       await page.goto(`/tests/ui/modal-fixture.html?kind=${kind}&edit&fail`);
       await page.getByRole("button", { name: "Mở hộp thoại", exact: true }).click();
       await expect(page.getByLabel("Tiêu đề")).toHaveValue("Công việc hiện tại");
-      await page.getByRole("button", { name: "Lưu", exact: true }).click();
+      await page.getByRole("button", { name: "Save", exact: true }).click();
       await page.evaluate(() => (window as Window & { completeModalSave: () => void }).completeModalSave());
-      await expect(page.getByRole("alert")).toContainText("Không thể lưu");
+      await expect(page.getByRole("alert")).toContainText("Could not save");
       await expect(page.getByLabel("Tiêu đề")).toHaveValue("Công việc hiện tại");
       await expect(page.getByLabel("Tiêu đề")).toBeEnabled();
       await page.keyboard.press("Escape");
@@ -90,8 +90,8 @@ for (const kind of ["personal", "workspace", "kanban"]) {
     test("uses a logical focus fallback if the original trigger disappears", async ({ page }) => {
       await page.goto(`/tests/ui/modal-fixture.html?kind=${kind}&removeOpener`);
       await page.getByRole("button", { name: "Mở hộp thoại", exact: true }).click();
-      await page.getByLabel("Tiêu đề").fill("Công việc mới");
-      await page.getByRole("button", { name: "Lưu", exact: true }).click();
+      await page.getByLabel("Tiêu đề").fill("New task");
+      await page.getByRole("button", { name: "Save", exact: true }).click();
       await page.evaluate(() => (window as Window & { completeModalSave: () => void }).completeModalSave());
       await expect(page.getByRole("dialog")).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Thao tác nền", exact: true })).toBeFocused();

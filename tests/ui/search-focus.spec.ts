@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator } from "./test";
 
 async function appearance(wrapper: Locator) {
   return wrapper.evaluate(element => {
@@ -36,7 +36,7 @@ for (const kind of ["personal", "workspace"]) {
     test(`H3 ${kind} search has visible keyboard focus without layout shift on ${surface}`, async ({ page }, testInfo) => {
       await page.goto(`/tests/ui/search-focus-fixture.html?kind=${kind}&surface=${surface}`);
       await page.evaluate(() => document.fonts.ready);
-      const input = page.getByRole("textbox", { name: kind === "personal" ? "Tìm công việc" : "Tìm dự án", exact: true });
+      const input = page.getByRole("textbox", { name: kind === "personal" ? "Search tasks" : "Search projects", exact: true });
       const wrapper = page.getByTestId("search-wrapper");
       const before = page.getByRole("button", { name: "Trước tìm kiếm", exact: true });
       const after = page.getByRole("button", { name: "Sau tìm kiếm", exact: true });
@@ -71,7 +71,7 @@ for (const kind of ["personal", "workspace"]) {
 
   test(`H3 ${kind} search preserves typing, filtering, clearing and pointer focus`, async ({ page }) => {
     await page.goto(`/tests/ui/search-focus-fixture.html?kind=${kind}`);
-    const input = page.getByRole("textbox", { name: kind === "personal" ? "Tìm công việc" : "Tìm dự án", exact: true });
+    const input = page.getByRole("textbox", { name: kind === "personal" ? "Search tasks" : "Search projects", exact: true });
     await input.click();
     await expect(input).toBeFocused();
     expect((await appearance(page.getByTestId("search-wrapper"))).style).toBe("solid");
