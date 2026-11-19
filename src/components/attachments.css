@@ -1,0 +1,34 @@
+.attachment-trigger { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:32px; padding:5px 8px; border:1px solid var(--border-default); border-radius:var(--radius-control); background:var(--surface-default); color:var(--text-secondary); font:inherit; font-size:11px; cursor:pointer; }
+.attachment-trigger:hover:not(:disabled) { color:var(--action-primary); background:var(--surface-subtle); }
+.attachment-overlay { width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; padding:20px; border:0; background:transparent; color:var(--text-primary); }
+dialog.ui-modal.attachment-overlay::backdrop { background:#121c3199; }
+dialog.ui-modal.attachment-overlay[open] { display:grid; place-items:center; }
+.attachment-dialog { width:min(760px,100%); max-height:calc(100dvh - 40px); overflow:auto; margin:auto; padding:24px; border:1px solid var(--border-subtle); border-radius:var(--radius-dialog); background:var(--surface-default); box-shadow:var(--shadow-dialog); }
+.attachment-header { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
+.attachment-header h2 { display:flex; align-items:center; gap:9px; margin:0 0 7px; font-size:20px; }
+.attachment-header p { margin:0; color:var(--text-secondary); font-size:13px; overflow-wrap:anywhere; }
+.attachment-dropzone { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:18px; border:1px dashed var(--border-hover); border-radius:var(--radius-panel); background:var(--surface-subtle); color:var(--text-secondary); }
+.attachment-dropzone>div { flex:1 1 240px; }
+.attachment-dropzone strong { color:var(--text-primary); font-size:13px; }
+.attachment-dropzone p { margin:5px 0 0; font-size:11px; line-height:1.6; }
+.attachment-list-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:20px 0 8px; font-size:12px; color:var(--text-secondary); }
+.attachment-list-heading h3 { font-size:13px; color:var(--text-primary); margin:0; }
+.attachment-list-heading h3 span { color:var(--text-secondary); font-weight:400; margin-left:5px; }
+.attachment-empty,.attachment-loading { color:var(--text-secondary); font-size:13px; padding:16px 0; }
+.attachment-list { margin:0; padding:0; list-style:none; }
+.attachment-list>li,.attachment-queue-item { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 0; border-bottom:1px solid var(--border-subtle); }
+.attachment-file-icon { display:grid; place-items:center; flex-shrink:0; width:36px; height:40px; background:var(--surface-subtle); color:var(--action-primary); border-radius:7px; }
+.attachment-file-icon.is-pdf { color:#b42318; background:#fff0ee; }.attachment-file-icon.is-image { color:#147d64; background:#eaf8f3; }
+.attachment-file-copy { flex:1 1 180px; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.attachment-file-copy strong { font-size:12px; line-height:1.5; overflow-wrap:anywhere; font-weight:600; }
+.attachment-file-copy>span { font-size:11px; line-height:1.5; color:var(--text-secondary); overflow-wrap:anywhere; }
+.attachment-file-actions { display:flex; gap:5px; }
+.attachment-file-actions .ui-icon { min-width:36px; min-height:36px; }
+.attachment-queue progress { width:100%; height:6px; accent-color:var(--action-primary); }
+.attachment-preview { border:1px solid var(--border-default); border-radius:var(--radius-panel); padding:12px; margin-top:18px; }
+.attachment-preview>header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; font-size:12px; overflow-wrap:anywhere; }
+.attachment-preview img { display:block; max-width:100%; max-height:400px; margin:auto; object-fit:contain; }
+.attachment-preview iframe { display:block; width:100%; height:420px; border:0; }
+.attachment-preview>p { font-size:11px; color:var(--text-secondary); }
+.attachment-opening { font-size:11px; color:var(--text-secondary); }
+@media(max-width:760px){.attachment-overlay{padding:10px}.attachment-dialog{padding:18px;max-height:calc(100dvh - 20px)}.attachment-file-actions .ui-icon,.attachment-trigger{min-height:44px;min-width:44px}.attachment-list>li{gap:9px}.attachment-file-copy{flex-basis:calc(100% - 50px)}.attachment-file-actions{margin-left:auto}.attachment-preview iframe{height:350px}}

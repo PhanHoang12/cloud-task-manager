@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as attachmentFiles from "../attachmentFiles.js";
+import type * as attachmentHttp from "../attachmentHttp.js";
 import type * as automation from "../automation.js";
 import type * as automationHistory from "../automationHistory.js";
 import type * as automationStats from "../automationStats.js";
@@ -26,6 +28,7 @@ import type * as profiles from "../profiles.js";
 import type * as projectTasks from "../projectTasks.js";
 import type * as projects from "../projects.js";
 import type * as subtasks from "../subtasks.js";
+import type * as taskAttachments from "../taskAttachments.js";
 import type * as tasks from "../tasks.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -36,6 +39,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  attachmentFiles: typeof attachmentFiles;
+  attachmentHttp: typeof attachmentHttp;
   automation: typeof automation;
   automationHistory: typeof automationHistory;
   automationStats: typeof automationStats;
@@ -54,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   projectTasks: typeof projectTasks;
   projects: typeof projects;
   subtasks: typeof subtasks;
+  taskAttachments: typeof taskAttachments;
   tasks: typeof tasks;
   workspaces: typeof workspaces;
 }>;

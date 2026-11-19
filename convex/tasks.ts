@@ -1,5 +1,6 @@
 import { query, mutation, type QueryCtx, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { deleteTaskAttachments } from "./taskAttachments";
 import type { Id } from "./_generated/dataModel";
 
 type Ctx = QueryCtx | MutationCtx;
@@ -78,6 +79,7 @@ export const remove = mutation({
     const ownerId=await requireUser(ctx);
     const task = await ownedTask(ctx,args.id,ownerId);
     if (task.coverStorageId) await ctx.storage.delete(task.coverStorageId);
+    await deleteTaskAttachments(ctx,args.id);
     await ctx.db.delete(args.id);
   },
 });

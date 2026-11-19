@@ -3,8 +3,13 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { illustrationOptions, uploadIllustration } from "./illustrationUpload";
+import { options as attachmentOptions, upload as uploadAttachment, download as downloadAttachment } from "./attachmentHttp";
 
 const http = httpRouter();
+http.route({ path: "/task-attachments/upload", method: "OPTIONS", handler: attachmentOptions });
+http.route({ path: "/task-attachments/upload", method: "POST", handler: uploadAttachment });
+http.route({ path: "/task-attachments/download", method: "OPTIONS", handler: attachmentOptions });
+http.route({ path: "/task-attachments/download", method: "GET", handler: downloadAttachment });
 http.route({ path: "/upload-illustration", method: "OPTIONS", handler: illustrationOptions });
 http.route({ path: "/upload-illustration", method: "POST", handler: uploadIllustration });
 

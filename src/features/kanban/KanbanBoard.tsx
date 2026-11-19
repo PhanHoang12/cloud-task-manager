@@ -20,6 +20,7 @@ import { buildCommentAuthorNames } from "../../lib/commentAuthors";
 import type { NotificationNavigation } from "../../lib/notificationNavigation";
 import PagePhoto from "../../components/PagePhoto";
 import CardIllustration from "../../components/CardIllustration";
+import AttachmentButton from "../../components/AttachmentButton";
 import CollectionToolbar from "../../components/CollectionToolbar";
 import { localDayKey, taskResults, type DeadlineFilter, type TaskSort } from "../../lib/collectionFilters";
 
@@ -263,6 +264,7 @@ return (
             {task.description && <p>{task.description}</p>}
             <div className="kb-details">{task.dueDate && <span><CalendarDays size={14}/>Due: {formatDueDate(task.dueDate)}</span>}
               <span><UserRound size={14}/>{task.assigneeId ? `Assigned to: ${assigneeLabel(task.assigneeId)}` : "Unassigned"}</span></div>
+              <AttachmentButton target={{kind:"projectTasks",id:task._id}} title={task.title} count={task.attachmentCount} editable={canChange(task,task.status)} disabled={pending!==null}/>
               <label>
                 Status
                 <select

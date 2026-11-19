@@ -12,6 +12,7 @@ const workspaceRole = v.union(
 export default defineSchema({
   // Giữ nguyên dữ liệu công việc cá nhân v1.0
   tasks: defineTable({
+    attachmentCount: v.optional(v.number()),
     coverStorageId: v.optional(v.id("_storage")),
     coverUrl: v.optional(v.string()),
     ownerId: v.string(),
@@ -102,6 +103,7 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId", "createdAt"]),
   projectTasks: defineTable({
+  attachmentCount: v.optional(v.number()),
   coverStorageId: v.optional(v.id("_storage")),
   coverUrl: v.optional(v.string()),
   projectId: v.id("projects"),
@@ -263,6 +265,17 @@ automationRuns: defineTable({
   "status",
   "startedAt",
 ]),
+taskAttachments: defineTable({
+  taskId: v.union(v.id("tasks"), v.id("projectTasks")),
+  taskType: v.union(v.literal("tasks"), v.literal("projectTasks")),
+  storageId: v.id("_storage"),
+  name: v.string(),
+  contentType: v.string(),
+  size: v.number(),
+  uploadedBy: v.string(),
+  uploadId: v.string(),
+  createdAt: v.number(),
+}).index("by_task", ["taskId"]).index("by_uploader_upload", ["uploadedBy", "uploadId"]),
 profiles: defineTable({
   userId: v.string(),
   // Authenticated account details used in Workspace member lists.

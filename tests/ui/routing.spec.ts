@@ -143,6 +143,7 @@ test("notification task URLs survive F5 and browser traversal", async ({ page })
 test("dirty Back/Forward cancellation preserves the URL and mounted dialog", async ({ page }) => {
   await page.goto(project); await expect(page.locator(".kb-page")).toBeVisible();
   await navigate(page, "My tasks");
+  await expect(page.locator(".personal-dashboard")).toBeVisible();
   await page.getByRole("button", { name: "New task", exact: true }).click();
   await page.getByLabel("Title *", { exact: true }).fill("Bản nháp giữ nguyên");
   page.once("dialog", dialog => dialog.dismiss()); await page.goBack();
