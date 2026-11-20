@@ -1,5 +1,6 @@
 import { query, mutation, internalMutation, type QueryCtx, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { emailConfig, validEmail } from './deadlineEmailConfig';
 
 
 async function requireUser(ctx: QueryCtx | MutationCtx) {
@@ -19,6 +20,7 @@ export const me = query({
       .unique();
 
     return {
+      emailDeliveryAvailable: emailConfig() !== null,
       clerk: {
         id: identity.subject,
         email: identity.email ?? "",
@@ -41,10 +43,19 @@ export const upsert = mutation({
     studentId: v.optional(v.string()),
     department: v.optional(v.string()),
     className: v.optional(v.string()),
+    deadlineEmailEnabled: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await requireUser(ctx);
 
+    if (args.deadlineEmailEnabled && (identity.emailVerified !== true || !validEmail(identity.email ?? ''))) {
+      throw new Error('Verify your account email before enabling deadline reminders.');
+    }
+    const emailPreference = args.deadlineEmailEnabled === undefined ? {} : {
+      deadlineEmailEnabled: args.deadlineEmailEnabled,
+      ...(identity.email?.trim() ? { email: identity.email.trim() } : {}),
+      emailVerified: identity.emailVerified === true && validEmail(identity.email ?? ''),
+    };
     const fullName = args.fullName.trim();
     if (fullName.length < 2 || fullName.length > 80) {
       throw new Error("Họ tên phải từ 2 đến 80 ký tự.");
@@ -63,6 +74,7 @@ export const upsert = mutation({
 
     if (existing) {
       await ctx.db.patch(existing._id, {
+        ...emailPreference,
         fullName,
         bio: args.bio?.trim(),
         phone: args.phone?.trim(),
@@ -75,6 +87,7 @@ export const upsert = mutation({
     }
 
     return await ctx.db.insert("profiles", {
+      ...emailPreference,
       userId: identity.subject,
       fullName,
       bio: args.bio?.trim(),
@@ -193,11 +206,12 @@ export const syncIdentity = mutation({
       [identity.givenName, identity.familyName].filter(Boolean).join(" ").trim() || undefined;
     const details = {
       email: identity.email?.trim() || existing?.email,
+      emailVerified: identity.emailVerified === true && validEmail(identity.email ?? ''),
       accountName: accountName || existing?.accountName,
       accountAvatarUrl: identity.pictureUrl || existing?.accountAvatarUrl,
     };
     if (existing) {
-      if (existing.email !== details.email || existing.accountName !== details.accountName || existing.accountAvatarUrl !== details.accountAvatarUrl) {
+      if (existing.email !== details.email || existing.emailVerified !== details.emailVerified || existing.accountName !== details.accountName || existing.accountAvatarUrl !== details.accountAvatarUrl) {
         await ctx.db.patch(existing._id, { ...details, updatedAt: Date.now() });
       }
     } else {

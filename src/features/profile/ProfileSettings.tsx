@@ -5,7 +5,7 @@ import "./profile.css";
 import { useAction, useFeedback } from "../../components/Feedback";
 import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAuth } from "@clerk/react";
-import { ContactRound, GraduationCap, Save, Text, Upload, UserRound } from "lucide-react";
+import { ContactRound, GraduationCap, Mail, Save, Text, Upload, UserRound } from "lucide-react";
 import PagePhoto from "../../components/PagePhoto";
 
 export default function ProfileSettings() {
@@ -20,26 +20,28 @@ export default function ProfileSettings() {
   const [studentId, setStudentId] = useState("");
   const [department, setDepartment] = useState("");
   const [className, setClassName] = useState("");
+  const [deadlineEmailEnabled, setDeadlineEmailEnabled] = useState(false);
 
   const { run, pending } = useAction();
   const { confirm } = useFeedback();
   const [baseline, setBaseline] = useState<string | null>(null);
-  const snapshot = JSON.stringify({ fullName, bio, phone, studentId, department, className });
+  const snapshot = JSON.stringify({ fullName, bio, phone, studentId, department, className, deadlineEmailEnabled });
   const dirty = baseline !== null && snapshot !== baseline;
   const dirtyRef = useRef(dirty); dirtyRef.current = dirty;
   useDraftGuard(dirty, pending !== null);
 
   useEffect(() => {
     if (!data || dirtyRef.current) return;
-    setBaseline(JSON.stringify({ fullName: data.profile?.fullName ?? data.clerk.name ?? "", bio: data.profile?.bio ?? "", phone: data.profile?.phone ?? "", studentId: data.profile?.studentId ?? "", department: data.profile?.department ?? "", className: data.profile?.className ?? "" }));
+    setBaseline(JSON.stringify({ fullName: data.profile?.fullName ?? data.clerk.name ?? "", bio: data.profile?.bio ?? "", phone: data.profile?.phone ?? "", studentId: data.profile?.studentId ?? "", department: data.profile?.department ?? "", className: data.profile?.className ?? "", deadlineEmailEnabled: data.profile?.deadlineEmailEnabled ?? false }));
     setFullName(data?.profile?.fullName ?? data?.clerk.name ?? "");
     setBio(data?.profile?.bio ?? "");
     setPhone(data?.profile?.phone ?? "");
     setStudentId(data?.profile?.studentId ?? "");
     setDepartment(data?.profile?.department ?? "");
     setClassName(data?.profile?.className ?? "");
+    setDeadlineEmailEnabled(data.profile?.deadlineEmailEnabled ?? false);
   }, [data?.profile?.fullName, data?.clerk.name, data?.profile?.bio,
-    data?.profile?.phone, data?.profile?.studentId, data?.profile?.department, data?.profile?.className]);
+    data?.profile?.phone, data?.profile?.studentId, data?.profile?.department, data?.profile?.className, data?.profile?.deadlineEmailEnabled]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,6 +50,7 @@ export default function ProfileSettings() {
       fullName, bio: bio || undefined, phone: phone || undefined,
       studentId: studentId || undefined, department: department || undefined,
       className: className || undefined,
+      deadlineEmailEnabled,
     }), "Profile updated.", "Could not update your profile.", "save")) setBaseline(submitted);
   }
 
@@ -179,6 +182,14 @@ export default function ProfileSettings() {
             </label></div>
 
 
+            <div className="profile-field-group"><h3><Mail size={17}/>Notifications</h3>
+              <label className="profile-email-preference">
+                <input type="checkbox" checked={deadlineEmailEnabled} onChange={event => setDeadlineEmailEnabled(event.target.checked)} aria-describedby="deadline-email-description" />
+                <span>Email me about upcoming task deadlines</span>
+              </label>
+              <p id="deadline-email-description" className="profile-email-help">Assigned team tasks · 24 hours and 2 hours before the end of the due date · Vietnam time (UTC+7).</p>
+              {!data.emailDeliveryAvailable && <p className="profile-email-help" role="status">Email delivery setup is pending. Your preference will be saved.</p>}
+            </div>
             <div className="profile-submit">
               <button className="ui-button ui-primary" aria-busy={pending==="save"} type="submit" disabled={pending!==null}>
                 <Save size={16}/>

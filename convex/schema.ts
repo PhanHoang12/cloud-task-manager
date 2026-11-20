@@ -280,6 +280,8 @@ profiles: defineTable({
   userId: v.string(),
   // Authenticated account details used in Workspace member lists.
   email: v.optional(v.string()),
+  emailVerified: v.optional(v.boolean()),
+  deadlineEmailEnabled: v.optional(v.boolean()),
   accountName: v.optional(v.string()),
   accountAvatarUrl: v.optional(v.string()),
 
@@ -297,5 +299,21 @@ profiles: defineTable({
   updatedAt: v.number(),
 })
   .index("by_user", ["userId"]),
+
+deadlineEmailReminders: defineTable({
+  key: v.string(), taskId: v.id('projectTasks'), recipientId: v.string(), dueDate: v.string(),
+  stage: v.union(v.literal('24h'), v.literal('2h')),
+  status: v.union(v.literal('pending'), v.literal('batched'), v.literal('sent'), v.literal('skipped')),
+  batchId: v.optional(v.id('deadlineEmailBatches')), createdAt: v.number(),
+}).index('by_key', ['key']).index('by_status_created', ['status', 'createdAt'])
+  .index('by_recipient_stage_status', ['recipientId', 'stage', 'status']),
+deadlineEmailBatches: defineTable({
+  recipientId: v.string(), stage: v.union(v.literal('24h'), v.literal('2h')),
+  reminderIds: v.array(v.id('deadlineEmailReminders')),
+  status: v.union(v.literal('queued'), v.literal('preparing'), v.literal('sending'), v.literal('sent'), v.literal('failed'), v.literal('uncertain'), v.literal('cancelled')),
+  attempts: v.number(), nextAttemptAt: v.number(), createdAt: v.number(),
+  finishedAt: v.optional(v.number()), reason: v.optional(v.string()),
+}).index('by_status_next', ['status', 'nextAttemptAt']),
+deadlineEmailUsage: defineTable({ day: v.string(), attempts: v.number() }).index('by_day', ['day']),
 
 });
