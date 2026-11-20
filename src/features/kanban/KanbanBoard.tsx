@@ -298,6 +298,8 @@ return (
             authorNames={commentAuthorNames}
             taskId={task._id}
             canComment={active && role !== "viewer"}
+            taskTitle={task.title} pollCount={task.pollCount}
+            pollFocus={notificationNavigation?.taskId === task._id && notificationNavigation.pollId ? {pollId:notificationNavigation.pollId,requestId:notificationNavigation.requestId} : undefined}
             canModerate={isManager}/>
             </ScreenErrorBoundary>
             </article>)}

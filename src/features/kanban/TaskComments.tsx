@@ -1,5 +1,5 @@
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useUser } from "@clerk/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -16,12 +16,16 @@ import "./collaboration.css";
 import { getCommentAuthorName } from "../../lib/commentAuthors";
 import { useDraftGuard } from "../../components/NavigationExperience";
 import { useAction, useFeedback } from "../../components/Feedback";
+import PollsButton from './PollsButton';
 
 type Props = {
   authorNames: ReadonlyMap<string, string> | undefined;
   taskId: Id<"projectTasks">;
   canComment: boolean;
   canModerate: boolean;
+  taskTitle: string;
+  pollCount?: number;
+  pollFocus?: { pollId: Id<'taskPolls'>; requestId: string | number };
 };
 
 function formatDate(timestamp: number) {
@@ -38,6 +42,7 @@ export default function TaskComments({
   taskId,
   canComment,
   canModerate,
+  taskTitle, pollCount, pollFocus,
 }: Props) {
   const { user } = useUser();
 
@@ -46,6 +51,7 @@ export default function TaskComments({
   const remove = useMutation(api.comments.remove);
 
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (pollFocus?.requestId !== undefined) setOpen(true); }, [pollFocus?.requestId]);
   const [text, setText] = useState("");
   const { run, pending } = useAction();
   const { confirm } = useFeedback();
@@ -89,6 +95,7 @@ export default function TaskComments({
 
       {open && (
         <div className="tc-content">
+          <div className="poll-discussion-toolbar"><PollsButton taskId={taskId} title={taskTitle} count={pollCount} focus={pollFocus}/></div>
           <div className="tc-list">
             {comments === undefined ? (
               <p className="tc-empty" role="status">Loading comments...</p>

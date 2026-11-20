@@ -3,6 +3,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { invalidateTaskDeadlineAlerts } from "./deadlineLifecycle";
 import { deleteTaskAttachments } from "./taskAttachments";
+import { deleteTaskPolls } from './polls';
 
 type Ctx = QueryCtx | MutationCtx;
 const taskStatus = v.union(v.literal("todo"), v.literal("in_progress"), v.literal("review"), v.literal("done"));
@@ -170,5 +171,6 @@ export const remove = mutation({ args: { taskId: v.id("projectTasks") }, handler
   await invalidateTaskDeadlineAlerts(ctx, args.taskId);
   if (task.coverStorageId) await ctx.storage.delete(task.coverStorageId);
   await deleteTaskAttachments(ctx,args.taskId);
+  await deleteTaskPolls(ctx,args.taskId);
   await ctx.db.delete(args.taskId);
 }});

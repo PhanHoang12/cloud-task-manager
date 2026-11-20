@@ -25,9 +25,17 @@ export const mine = query({
 
     // Ẩn các thông báo đã bị vô hiệu hóa.
     // Dữ liệu cũ chưa có isActive vẫn được hiển thị.
-    return notifications.filter(
-      (notification) => notification.isActive !== false
-    );
+    const visible = await Promise.all(notifications.map(async notification => {
+      if (notification.isActive === false) return null;
+      if (notification.kind !== 'poll_created') return notification;
+      const poll = notification.pollId ? await ctx.db.get(notification.pollId) : null;
+      const task = poll ? await ctx.db.get(poll.taskId) : null;
+      const project = task ? await ctx.db.get(task.projectId) : null;
+      if (!poll || poll.deleting || !task || !project || poll.taskId !== notification.taskId || project._id !== notification.projectId || !await ctx.db.get(project.workspaceId)) return null;
+      const member = await ctx.db.query('workspaceMembers').withIndex('by_workspace_user', q => q.eq('workspaceId', project.workspaceId).eq('userId', identity.subject)).unique();
+      return member && member.role !== 'viewer' ? notification : null;
+    }));
+    return visible.filter((notification): notification is NonNullable<typeof notification> => notification !== null);
   },
 });
 

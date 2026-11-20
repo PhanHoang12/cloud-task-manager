@@ -27,12 +27,10 @@ export async function invalidateTaskDeadlineAlerts(
     .collect();
 
   // 2. Lấy các thông báo liên quan đến Task
-  const notices = await ctx.db
-    .query("notifications")
-    .withIndex("by_task", (q) =>
-      q.eq("taskId", taskId)
-    )
-    .collect();
+  // Poll fan-out can contain many unrelated notices; read deadline kinds only.
+  const notices = (await Promise.all((['deadline_upcoming', 'deadline_overdue'] as const).map(kind =>
+    ctx.db.query('notifications').withIndex('by_task_kind', q => q.eq('taskId', taskId).eq('kind', kind)).collect()
+  ))).flat();
 
   // 3. Vô hiệu hóa lịch sử cảnh báo
   for (const alert of alerts) {

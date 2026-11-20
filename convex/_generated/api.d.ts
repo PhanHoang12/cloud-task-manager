@@ -27,6 +27,7 @@ import type * as invitations from "../invitations.js";
 import type * as members from "../members.js";
 import type * as notifications from "../notifications.js";
 import type * as permissions from "../permissions.js";
+import type * as polls from "../polls.js";
 import type * as profiles from "../profiles.js";
 import type * as projectTasks from "../projectTasks.js";
 import type * as projects from "../projects.js";
@@ -62,6 +63,7 @@ declare const fullApi: ApiFromModules<{
   members: typeof members;
   notifications: typeof notifications;
   permissions: typeof permissions;
+  polls: typeof polls;
   profiles: typeof profiles;
   projectTasks: typeof projectTasks;
   projects: typeof projects;

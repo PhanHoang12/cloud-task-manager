@@ -103,6 +103,7 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId", "createdAt"]),
   projectTasks: defineTable({
+  pollCount: v.optional(v.number()),
   attachmentCount: v.optional(v.number()),
   coverStorageId: v.optional(v.id("_storage")),
   coverUrl: v.optional(v.string()),
@@ -188,10 +189,12 @@ notifications: defineTable({
 
   projectId: v.id("projects"),
   taskId: v.id("projectTasks"),
+  pollId: v.optional(v.id('taskPolls')),
   isActive: v.optional(v.boolean()),
   invalidatedAt: v.optional(v.number()),
 
   kind: v.union(
+    v.literal('poll_created'),
     v.literal("comment"),
     v.literal("assigned"),
     v.literal("deadline_upcoming"),
@@ -207,6 +210,8 @@ notifications: defineTable({
     "createdAt",
   ])
   .index("by_task", ["taskId"])
+  .index('by_poll_recipient', ['pollId', 'recipientId'])
+  .index('by_task_kind', ['taskId', 'kind'])
   .index("by_project_created", [
   "projectId",
   "createdAt",
@@ -315,5 +320,14 @@ deadlineEmailBatches: defineTable({
   finishedAt: v.optional(v.number()), reason: v.optional(v.string()),
 }).index('by_status_next', ['status', 'nextAttemptAt']),
 deadlineEmailUsage: defineTable({ day: v.string(), attempts: v.number() }).index('by_day', ['day']),
+taskPolls: defineTable({
+  taskId: v.id('projectTasks'), projectId: v.id('projects'), createdBy: v.string(), requestKey: v.string(),
+  question: v.string(), options: v.array(v.object({ id: v.string(), label: v.string(), votes: v.number() })),
+  totalVotes: v.number(), status: v.union(v.literal('open'), v.literal('closed')),
+  createdAt: v.number(), closedAt: v.optional(v.number()), deleting: v.optional(v.boolean()),
+}).index('by_task_created', ['taskId', 'createdAt']).index('by_creator_request', ['createdBy', 'requestKey']),
+taskPollVotes: defineTable({
+  pollId: v.id('taskPolls'), userId: v.string(), optionId: v.string(), createdAt: v.number(), updatedAt: v.number(),
+}).index('by_poll_user', ['pollId', 'userId']).index('by_poll', ['pollId']),
 
 });

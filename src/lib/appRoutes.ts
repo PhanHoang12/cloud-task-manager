@@ -33,12 +33,14 @@ export function routeFromLocation(location: Pick<Location, "pathname" | "search"
   const workspaceId = workspace.params.workspaceId as Id<"workspaces">;
   const projectId = project ? project.params.projectId as Id<"projects"> : null;
   const task = new URLSearchParams(location.search).get("task");
+  const poll = new URLSearchParams(location.search).get('poll');
   const focusProject = location.state?.focusProject === true;
   return {
     page: "workspace", workspaceId, projectId,
     notification: projectId && (validIdentifier(task ?? undefined) || focusProject) ? {
       workspaceId, projectId, requestId: location.key,
       ...(validIdentifier(task ?? undefined) ? { taskId: task as Id<"projectTasks"> } : {}),
+      ...(validIdentifier(task ?? undefined) && validIdentifier(poll ?? undefined) ? { pollId: poll as Id<'taskPolls'> } : {}),
     } : null,
   };
 }
@@ -50,5 +52,5 @@ export function routePath(route: AppRoute): string {
   const base = `${appPaths.workspaces}/${encodeURIComponent(route.workspaceId)}`;
   if (!route.projectId) return base;
   const project = `${base}/projects/${encodeURIComponent(route.projectId)}`;
-  return route.notification?.taskId ? `${project}?task=${encodeURIComponent(route.notification.taskId)}` : project;
+  return route.notification?.taskId ? `${project}?task=${encodeURIComponent(route.notification.taskId)}${route.notification.pollId ? `&poll=${encodeURIComponent(route.notification.pollId)}` : ''}` : project;
 }

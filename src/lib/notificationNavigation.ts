@@ -1,16 +1,17 @@
 import type { Id } from "../../convex/_generated/dataModel";
 
-export type NotificationTarget = { projectId: Id<"projects">; taskId?: Id<"projectTasks"> };
+export type NotificationTarget = { projectId: Id<"projects">; taskId?: Id<"projectTasks">; pollId?: Id<'taskPolls'> };
 export type NotificationNavigation = NotificationTarget & { workspaceId: Id<"workspaces">; requestId: number | string };
 
 function identifier(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && value.trim() === value;
 }
-export function getNotificationTarget(data: { projectId?: unknown; taskId?: unknown }): NotificationTarget | null {
+export function getNotificationTarget(data: { projectId?: unknown; taskId?: unknown; pollId?: unknown }): NotificationTarget | null {
   if (!identifier(data.projectId)) return null;
   return {
     projectId: data.projectId as Id<"projects">,
     ...(identifier(data.taskId) ? { taskId: data.taskId as Id<"projectTasks"> } : {}),
+    ...(identifier(data.taskId) && identifier(data.pollId) ? { pollId: data.pollId as Id<'taskPolls'> } : {}),
   };
 }
 
@@ -40,7 +41,7 @@ export async function resolveNotificationTarget(target: NotificationTarget, look
         throw new Error("Notification target unavailable");
       }
     }
-    return { workspaceId: workspace._id, projectId: project._id, ...(target.taskId ? { taskId: target.taskId } : {}) };
+    return { workspaceId: workspace._id, projectId: project._id, ...(target.taskId ? { taskId: target.taskId, ...(target.pollId ? { pollId: target.pollId } : {}) } : {}) };
   }
   throw new Error("Notification target unavailable");
 }

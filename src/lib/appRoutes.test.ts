@@ -6,6 +6,12 @@ const parse = (url: string, state: unknown = null) => {
   return routeFromLocation({ pathname, search, state, key: "entry" });
 };
 describe("persistent application URLs", () => {
+  it('round-trips poll deep links without history-only selection state', () => {
+    const url='/workspaces/team-1/projects/project-1?task=task-1&poll=poll-1';
+    expect(routePath(parse(url))).toBe(url);expect(parse(url).notification?.pollId).toBe('poll-1');
+    expect(parse('/workspaces/team-1/projects/project-1?poll=poll-1').notification).toBeNull();
+    expect(parse('/workspaces/team-1/projects/project-1?task=task-1&poll=%2F').notification?.pollId).toBeUndefined();
+  });
   it.each(["/personal", "/profile", "/workspaces", "/workspaces/team-1", "/workspaces/team-1/projects/project-1", "/workspaces/team-1/projects/project-1?task=task-1"])("round-trips %s without browser session state", url => {
     expect(routePath(parse(url))).toBe(url);
   });

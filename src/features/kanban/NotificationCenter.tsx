@@ -10,6 +10,7 @@ import {
   Clock3,
   AlertTriangle,
   UserPlus,
+  Vote,
   X,
 } from "lucide-react";
 import "./collaboration.css";
@@ -23,6 +24,8 @@ const VIEWPORT_GAP = 12;
 
 function getNotificationIcon(kind: string) {
   switch (kind) {
+    case 'poll_created':
+      return <Vote size={20} />;
     case "deadline_upcoming":
       return <Clock3 size={20} />;
 
@@ -224,7 +227,7 @@ export default function NotificationCenter({ onNavigate }: { onNavigate?: (targe
                 >
                   <span className={`notify-icon notify-icon-${item.kind}`}>{getNotificationIcon(item.kind)}</span>
                   <span className="notify-content">
-                    <span className="notify-category">{({ comment: "Discussion", assigned: "Assignment", deadline_upcoming: "Due soon", deadline_overdue: "Overdue" })[item.kind]}</span>
+                    <span className="notify-category">{({ poll_created: 'Poll', comment: "Discussion", assigned: "Assignment", deadline_upcoming: "Due soon", deadline_overdue: "Overdue" })[item.kind]}</span>
                     <span className="notify-message">{formatNotificationMessage(item.message)}</span>
                     <span className="notify-time">{formatTime(item.createdAt)}</span>
                     {onNavigate && getNotificationTarget(item) && <span className="notify-destination">{getNotificationTarget(item)?.taskId ? "Open task" : "Open project"}</span>}
